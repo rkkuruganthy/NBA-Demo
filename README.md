@@ -85,12 +85,13 @@ This spins up:
 docker exec -it nba-backend python seed_10k_population.py
 ```
 
-This creates **56,308 nodes** across 3 industries:
+This creates **56,308+ nodes** across 4 industries:
 - **3,502 Financial** users (Affluent / Mass Market / Subprime)
 - **3,002 AML** users (Clean / Suspicious / Confirmed Fraud Ring)
 - **3,502 Healthcare** patients (Compliant / At Risk / Critical)
-- **6 Hero profiles** for curated demo scenarios
-- **9 deterministic policies**
+- **2,000 E-Commerce** visitors (Anonymous Browsing & Conversion paths)
+- **8 Hero profiles** for curated demo scenarios
+- **13 deterministic policies**
 
 ### 4. Open the Explorer
 Navigate to **http://localhost:3002/explorer**
@@ -120,6 +121,13 @@ Navigate to **http://localhost:3002/explorer**
 | `Diagnosis → Prescription → CareGap` | `care_gap_days`, `rx_status` | Chronic + 3-7 day gap → Schedule follow-up |
 | `Patient → Context` | `risk_tier` | Compliant, fulfilled Rx → APPROVE (monitor) |
 
+### 🛒 Auto E-Commerce — Intent-to-Lease Conversion (MarTech)
+| Graph Path | Feature Extracted | Decision Logic |
+|---|---|---|
+| `Person → OwnedVehicle → Valuation` | `max_trade_in_equity` | > $5k equity + session abandonment → OFFER TRADE-IN VOUCHER |
+| `Session → BrowsedVehicle → Dealership` | `min_inventory_stock` | < 3 units in local stock → DYNAMIC SCARCITY ALERT |
+| `Person → PhysicalVisit → Vehicle` | `test_drive_count` | Previous test drive + web abandonment → VIP SHOWROOM INVITE |
+
 ---
 
 ## 🔑 Key Features
@@ -144,7 +152,7 @@ Every Decision node stores:
 - `decision_type` — The trigger event type
 
 ### Searchable User Explorer
-Browse and search across all 10,000+ users with industry filters (💳 Financial, 🚨 AML, 🏥 Healthcare) and real-time Neo4j-backed search.
+Browse and search across all users with industry filters (💳 Financial, 🚨 AML, 🏥 Healthcare, 🛒 E-Commerce) and real-time Neo4j-backed search.
 
 ---
 
@@ -221,6 +229,11 @@ curl -X POST http://localhost:8001/cases/evaluate \
 curl -X POST http://localhost:8001/cases/evaluate \
   -H "Content-Type: application/json" \
   -d '{"customer_id":"MED-03200","trigger_event":"CARE_GAP_REVIEW"}'
+
+# Auto E-Commerce — Abandoned Session (Anon user)
+curl -X POST http://localhost:8001/cases/evaluate \
+  -H "Content-Type: application/json" \
+  -d '{"customer_id":"CUST-ECOM-SAD","trigger_event":"ABANDONED_SESSION"}'
 
 # Population count
 curl http://localhost:8001/customers/count
