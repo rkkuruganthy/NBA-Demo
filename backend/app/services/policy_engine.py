@@ -161,6 +161,96 @@ def extract_healthcare_features(patient_id: str) -> dict:
     }
 
 
+
+def extract_insurance_features(policyholder_id: str) -> dict:
+    """Extract features from the Insurance graph topology via Cypher."""
+    result = execute_query("""
+        MATCH (ph:Person {id: $id})
+        OPTIONAL MATCH (ph)-[:HAS_POLICY]->(pol:InsurancePolicy)
+        OPTIONAL MATCH (ph)-[:FILED_CLAIM]->(c:Claim)-[:SUBMITTED_TO]->(prov:Provider)
+        OPTIONAL MATCH (c)-[:FOR_DIAGNOSIS]->(diag:DiagnosisCode)
+        OPTIONAL MATCH (c)-[:HAS_PREAUTH]->(pa:PreAuthorization)
+        OPTIONAL MATCH (ph)-[:FILED_CLAIM]->(prev_claim:Claim)
+            WHERE prev_claim.id <> c.id
+            AND prev_claim.provider_id = prov.id
+            AND prev_claim.diag_code = diag.code
+        RETURN c.amount AS claim_amount,
+               c.type AS claim_type,
+               c.is_emergency AS is_emergency,
+               pol.type AS policy_type,
+               pol.deductible AS deductible,
+               prov.name AS provider_name,
+               prov.risk_score AS provider_risk_score,
+               prov.is_in_network AS is_in_network,
+               diag.code AS diag_code,
+               diag.description AS diag_desc,
+               pa IS NOT NULL AS has_preauthorization,
+               prev_claim IS NOT NULL AS is_duplicate_claim,
+               duration.inDays(prev_claim.submitted_at, c.submitted_at).days AS days_since_last_claim
+    """, {"id": policyholder_id})
+
+    if not result:
+        return {}
+
+    r = result[0]
+    return {
+        "claim_amount": r.get("claim_amount") or 0,
+        "claim_type": r.get("claim_type") or "Unknown",
+        "is_emergency": bool(r.get("is_emergency")),
+        "policy_type": r.get("policy_type") or "Unknown",
+        "deductible": r.get("deductible") or 0,
+        "provider_name": r.get("provider_name") or "Unknown",
+        "provider_risk_score": r.get("provider_risk_score") or 0.1,
+        "is_out_of_network": not bool(r.get("is_in_network", True)),
+        "diag_code": r.get("diag_code") or "Unknown",
+        "diag_desc": r.get("diag_desc") or "Unknown",
+        "has_preauthorization": bool(r.get("has_preauthorization")),
+        "is_duplicate_claim": bool(r.get("is_duplicate_claim")),
+        "days_since_last_claim": r.get("days_since_last_claim") or 999,
+    }
+
+
+def extract_ecommerce_features(session_id: str) -> dict:
+    """Extract features from the E-Commerce graph topology via Cypher."""
+    result = execute_query("""
+        MATCH (sess:Session {id: $id})
+        OPTIONAL MATCH (sess)-[v:VIEWED]->(veh:BrowsedVehicle)
+        OPTIONAL MATCH (sess)-[:ENGAGED_WITH]->(calc:FinancingCalculator)
+        OPTIONAL MATCH (dev:Device)-[:INITIATED]->(sess)
+        OPTIONAL MATCH (p:Person)-[:LOGGED_IN_FROM]->(dev)
+        OPTIONAL MATCH (p)-[:OWNS]->(ov:OwnedVehicle)-[:VALUED_AT]->(val:Valuation)
+        OPTIONAL MATCH (p)-[:TOOK_TEST_DRIVE]->(pv:PhysicalVisit)
+        OPTIONAL MATCH (veh)-[loc:LOCATED_AT]->(dlr:Dealership)
+        OPTIONAL MATCH (sess)-[purch:PURCHASED]->(veh)
+        RETURN sess.is_authenticated AS is_authenticated,
+               dev.type AS device_type,
+               count(v) AS view_count,
+               collect(DISTINCT veh.make) AS vehicle_makes,
+               calc IS NOT NULL AS used_calculator,
+               calc.term_months AS term_months,
+               max(val.amount) AS max_trade_in_equity,
+               count(pv) AS test_drive_count,
+               min(loc.stock) AS min_inventory_stock,
+               count(purch) > 0 AS has_purchased
+    """, {"id": session_id})
+
+    if not result:
+        return {}
+
+    r = result[0]
+    return {
+        "is_authenticated": bool(r.get("is_authenticated")),
+        "device_type": r.get("device_type") or "Unknown",
+        "view_count": r.get("view_count") or 0,
+        "vehicle_makes": r.get("vehicle_makes") or [],
+        "used_calculator": bool(r.get("used_calculator")),
+        "term_months": r.get("term_months") or 0,
+        "max_trade_in_equity": r.get("max_trade_in_equity") or 0.0,
+        "test_drive_count": r.get("test_drive_count") or 0,
+        "min_inventory_stock": r.get("min_inventory_stock"), # Keep None if unresolved
+        "has_purchased": bool(r.get("has_purchased")),
+    }
+
 # ──────────────────────────────────────────────────
 # POPULATION-BASED CONFIDENCE SCORING
 # ──────────────────────────────────────────────────
@@ -177,9 +267,24 @@ def calculate_population_confidence(segment: str, proposed_action: str) -> float
 
     if result and result[0]["total"] > 0:
         base_confidence = result[0]["matching"] / result[0]["total"]
-        # Blend with rule-based confidence (70% rule, 30% population)
         return base_confidence
     return 0.0  # No historical data yet
+
+
+def blend_with_population(
+    rule_confidence: float,
+    segment: str,
+    proposed_action: str,
+    rule_weight: float = 0.70,
+) -> float:
+    """Blend rule-based confidence (70%) with population historical data (30%)."""
+    pop_confidence = calculate_population_confidence(segment, proposed_action)
+    if pop_confidence > 0:
+        blended = (rule_weight * rule_confidence) + ((1 - rule_weight) * pop_confidence)
+        logger.info(f"Confidence blending: rule={rule_confidence:.2f}, pop={pop_confidence:.2f}, blended={blended:.2f}")
+        return round(min(blended, 0.99), 2)
+    # No population data yet — use pure rule confidence
+    return rule_confidence
 
 
 # ──────────────────────────────────────────────────
@@ -239,6 +344,7 @@ def evaluate_case(
                 family="Credit", matched=True,
                 details=f"Account has {dpd} days past due — exceeds absolute limit."
             ))
+            result.confidence = blend_with_population(result.confidence, segment, result.action.value)
             result.ranked_actions = [
                 RankedAction(rank=1, action="HARD DECLINE", confidence=0.99,
                              description=f"Decline due to {dpd} DPD. No counter-offer possible.",
@@ -247,6 +353,7 @@ def evaluate_case(
                              description="Decline CLI but offer enrollment in financial wellness program.",
                              revenue_impact="+$500/year (retention)"),
             ]
+            explanation["population_blend"] = True
             result.explanation_inputs = explanation
             return result
 
@@ -273,6 +380,8 @@ def evaluate_case(
                              description="Approve CLI with cross-sell travel insurance bundle.",
                              revenue_impact="+$89 one-time"),
             ]
+            result.confidence = blend_with_population(result.confidence, segment, result.action.value)
+            explanation["population_blend"] = True
             result.explanation_inputs = explanation
             return result
 
@@ -313,6 +422,8 @@ def evaluate_case(
                              description="Hard decline with proactive retention specialist outreach.",
                              revenue_impact="+$800/year (retention)"),
             ]
+            result.confidence = blend_with_population(result.confidence, segment, result.action.value)
+            explanation["population_blend"] = True
             result.explanation_inputs = explanation
             return result
 
@@ -327,6 +438,8 @@ def evaluate_case(
                              description=f"Low-risk approval: {credit_score} credit score with {util*100:.0f}% utilization.",
                              revenue_impact=f"+${current_limit * 0.03:,.0f}/year"),
             ]
+            result.confidence = blend_with_population(result.confidence, segment, result.action.value)
+            explanation["population_blend"] = True
             result.explanation_inputs = explanation
             return result
 
@@ -343,6 +456,8 @@ def evaluate_case(
                          description=f"Approve small increase (${min(current_limit * 0.10, 1000):,.0f}) with monitoring.",
                          revenue_impact=f"+${min(current_limit * 0.01, 100):,.0f}/year"),
         ]
+        result.confidence = blend_with_population(result.confidence, segment, result.action.value)
+        explanation["population_blend"] = True
         result.explanation_inputs = explanation
         return result
 
@@ -593,6 +708,281 @@ def evaluate_case(
         result.explanation_inputs = explanation
         return result
 
+    # ==========================================
+    # SCENARIO 4: INSURANCE CLAIMS / UNDERWRITING
+    # ==========================================
+    if trigger_event == TriggerEvent.CLAIMS_REVIEW:
+        features = extract_insurance_features(customer_id)
+        if not features:
+            explanation["factors"].append("No insurance graph topology found for this entity.")
+            result.explanation_inputs = explanation
+            return result
+
+        explanation["graph_features"] = features
+        claim_amount = features["claim_amount"]
+        is_duplicate = features["is_duplicate_claim"]
+        days_since_last = features["days_since_last_claim"]
+        provider_risk = features["provider_risk_score"]
+        is_out_of_network = features["is_out_of_network"]
+        has_preauth = features["has_preauthorization"]
+        policy_type = features["policy_type"]
+        diag_code = features["diag_code"]
+        is_emergency = features["is_emergency"]
+
+        # Rule 1: Duplicate claim detection
+        if is_duplicate and days_since_last < 30:
+            result.action = RecommendedAction.DECLINE
+            result.confidence = 0.96
+            result.requires_human_review = False
+            explanation["factors"].append(f"Duplicate claim detected: same provider + diagnosis code within {days_since_last} days.")
+            result.applied_policies.append(AppliedPolicy(
+                policy_id="POL-INS-01", policy_name="Duplicate Claim Detection",
+                family="Claims", matched=True,
+                details=f"Claim for {diag_code} from same provider submitted {days_since_last} days ago. Flagged as duplicate."
+            ))
+            result.ranked_actions = [
+                RankedAction(rank=1, action="DENY - DUPLICATE", confidence=0.96,
+                             description=f"Duplicate claim: {diag_code} submitted {days_since_last}d ago from same provider.",
+                             revenue_impact=f"Savings: ${claim_amount:,.0f}"),
+                RankedAction(rank=2, action="FLAG FOR SIU REVIEW", confidence=0.80,
+                             description="Send to Special Investigations Unit for potential fraud pattern analysis.",
+                             revenue_impact="$0"),
+            ]
+            result.explanation_inputs = explanation
+            return result
+
+        # Rule 2: High-value claim threshold
+        if claim_amount > 50000 and provider_risk > 0.6:
+            result.action = RecommendedAction.ESCALATE_FOR_REVIEW
+            result.confidence = 0.85
+            result.requires_human_review = True
+            explanation["factors"].append(f"High-value claim: ${claim_amount:,.0f} from provider with {provider_risk:.0%} risk score.")
+            result.applied_policies.append(AppliedPolicy(
+                policy_id="POL-INS-02", policy_name="High-Value Claim Threshold",
+                family="Claims", matched=True,
+                details=f"${claim_amount:,.0f} exceeds $50K threshold. Provider risk score: {provider_risk:.2f}."
+            ))
+            result.counter_offer = CounterOffer(
+                suggested_value=f"Approve ${min(claim_amount * 0.6, 50000):,.0f} with remaining pending review",
+                original_request=f"${claim_amount:,.0f} claim",
+                rationale=f"Partial approval for ${min(claim_amount * 0.6, 50000):,.0f} while SIU completes review of the remaining ${claim_amount - min(claim_amount * 0.6, 50000):,.0f}.",
+                conditions=[
+                    "Submit itemized billing within 15 days",
+                    "Medical records review by clinical team",
+                    f"Provider audit initiated for risk score {provider_risk:.2f}",
+                ]
+            )
+            result.ranked_actions = [
+                RankedAction(rank=1, action="ESCALATE TO SIU", confidence=0.85,
+                             description=f"${claim_amount:,.0f} from high-risk provider. SIU review required.",
+                             revenue_impact=f"Potential savings: ${claim_amount * 0.3:,.0f}"),
+                RankedAction(rank=2, action="PARTIAL APPROVE", confidence=0.65,
+                             description=f"Approve ${min(claim_amount * 0.6, 50000):,.0f} immediately, hold remainder.",
+                             revenue_impact=f"-${min(claim_amount * 0.6, 50000):,.0f}"),
+            ]
+            result.explanation_inputs = explanation
+            return result
+
+        # Rule 3: Out-of-network emergency override
+        if is_out_of_network and is_emergency:
+            result.action = RecommendedAction.APPROVE
+            result.confidence = 0.90
+            result.requires_human_review = False
+            explanation["factors"].append(f"Emergency out-of-network claim: ${claim_amount:,.0f}. Emergency override applies.")
+            result.applied_policies.append(AppliedPolicy(
+                policy_id="POL-INS-03", policy_name="Out-of-Network Emergency Override",
+                family="Claims", matched=True,
+                details=f"Emergency claim at out-of-network facility. Auto-approve per emergency clause."
+            ))
+            result.ranked_actions = [
+                RankedAction(rank=1, action="APPROVE - EMERGENCY OVERRIDE", confidence=0.90,
+                             description=f"Emergency OON claim approved per policy. ${claim_amount:,.0f}.",
+                             revenue_impact=f"-${claim_amount:,.0f}"),
+                RankedAction(rank=2, action="APPROVE + NETWORK REFERRAL", confidence=0.75,
+                             description="Approve and send in-network provider referral for follow-up care.",
+                             revenue_impact=f"-${claim_amount:,.0f} + future savings"),
+            ]
+            result.explanation_inputs = explanation
+            return result
+
+        # Rule 4: Pre-authorization compliance
+        if not has_preauth and claim_amount > 5000 and not is_emergency:
+            result.action = RecommendedAction.DECLINE
+            result.confidence = 0.88
+            result.requires_human_review = False
+            explanation["factors"].append(f"No pre-authorization for ${claim_amount:,.0f} non-emergency claim.")
+            result.applied_policies.append(AppliedPolicy(
+                policy_id="POL-INS-04", policy_name="Pre-Authorization Compliance",
+                family="Claims", matched=True,
+                details=f"Claims >${'5,000'} require pre-authorization for non-emergency procedures."
+            ))
+            result.counter_offer = CounterOffer(
+                suggested_value="Submit retroactive pre-authorization request",
+                original_request=f"${claim_amount:,.0f} claim without pre-auth",
+                rationale="Claim denied per pre-authorization policy. Retroactive authorization may be available.",
+                conditions=[
+                    "Submit clinical justification within 30 days",
+                    "Physician must provide medical necessity documentation",
+                    "Claim will be reprocessed upon receipt of authorization",
+                ]
+            )
+            result.ranked_actions = [
+                RankedAction(rank=1, action="DENY - NO PRE-AUTH", confidence=0.88,
+                             description=f"${claim_amount:,.0f} denied: pre-authorization required for elective procedures.",
+                             revenue_impact=f"Savings: ${claim_amount:,.0f}"),
+                RankedAction(rank=2, action="REQUEST RETRO-AUTH", confidence=0.60,
+                             description="Allow retroactive pre-authorization submission within 30 days.",
+                             revenue_impact="$0 (pending)"),
+            ]
+            result.explanation_inputs = explanation
+            return result
+
+        # Rule 5: Clean claim → APPROVE
+        result.action = RecommendedAction.APPROVE
+        result.confidence = 0.92
+        result.requires_human_review = False
+        explanation["factors"].append(f"Clean claim: ${claim_amount:,.0f} for {diag_code}. In-network, pre-authorized, no duplicates.")
+        result.applied_policies.append(AppliedPolicy(
+            policy_id="POL-INS-05", policy_name="Clean Claim Auto-Approve",
+            family="Claims", matched=True,
+            details=f"Claim meets all requirements. Policy: {policy_type}."
+        ))
+        result.ranked_actions = [
+            RankedAction(rank=1, action="APPROVE - CLEAN CLAIM", confidence=0.92,
+                         description=f"Auto-approved: ${claim_amount:,.0f} for {diag_code}.",
+                         revenue_impact=f"-${claim_amount:,.0f}"),
+        ]
+        result.explanation_inputs = explanation
+        return result
+
+    # ==========================================
+    # SCENARIO 5: E-COMMERCE INTENT TO LEASE
+    # ==========================================
+    if trigger_event == TriggerEvent.ABANDONED_SESSION:
+        # Match "CUST-ECOM-SAD" from UI to "SESS-ECOM-SAD" in graph
+        session_id = customer_id.replace("CUST-", "SESS-") if customer_id.startswith("CUST-") else customer_id
+        
+        features = extract_ecommerce_features(session_id)
+        if not features:
+            explanation["factors"].append("No e-commerce graph topology found for this session.")
+            result.explanation_inputs = explanation
+            return result
+
+        explanation["graph_features"] = features
+        # Rule 0: Already Purchased (Skip abandonment logic)
+        if features.get("has_purchased"):
+            result.action = RecommendedAction.APPROVE
+            result.confidence = 0.99
+            result.requires_human_review = False
+            explanation["factors"].append(f"User already purchased the vehicle. No abandonment logic required.")
+            result.explanation_inputs = explanation
+            return result
+
+        # Extract features
+        views = features.get("view_count", 0)
+        used_calc = features.get("used_calculator", False)
+        makes = features.get("vehicle_makes", [])
+        term_months = features.get("term_months", 0)
+        estimated_apr = features.get("estimated_apr", 0)
+        device_type = features.get("device_type", "Unknown")
+        trade_in_equity = features.get("max_trade_in_equity", 0.0)
+        inventory_stock = features.get("min_inventory_stock")
+        test_drives = features.get("test_drive_count", 0)
+
+        # Rule 1: Trade-In Equity Leverage (Capability Vector)
+        if trade_in_equity > 5000 and views >= 4:
+            result.action = RecommendedAction.OFFER_TRADE_IN
+            result.confidence = 0.95
+            result.requires_human_review = False
+            explanation["factors"].append(f"High equity detected: ${trade_in_equity:,.0f} from owned vehicle. Pushing capability-driven counter offer.")
+            result.applied_policies.append(AppliedPolicy(
+                policy_id="POL-MAR-02", policy_name="Trade-In Equity Leverage",
+                family="MarTech", matched=True,
+                details=f"Valuation represents high liquidity. Converting list price using ${trade_in_equity:,.0f} down payment."
+            ))
+            result.counter_offer = CounterOffer(
+                original_request=f"Lease {makes} standard terms",
+                suggested_value="Trade-in + $299/mo payment",
+                rationale=f"Applying ${trade_in_equity:,.0f} positive equity reduces cap cost significantly.",
+                conditions=["Trade-in passes inspection", "Requires 720+ FICO"]
+            )
+            result.ranked_actions = [
+                RankedAction(rank=1, action="SHOW TRADE-IN SMS OFFER", confidence=0.95,
+                             description=f"Send SMS: 'Trade your car and drive this {makes} for $299/mo'",
+                             revenue_impact="+$30k (+inventory acquisition)"),
+            ]
+            result.explanation_inputs = explanation
+            return result
+
+        # Rule 2: Dynamic Supply Scarcity (FOMO Vector)
+        if inventory_stock is not None and inventory_stock < 3 and views >= 2:
+            result.action = RecommendedAction.SCARCITY_ALERT
+            result.confidence = 0.88
+            result.requires_human_review = False
+            explanation["factors"].append(f"Supply constraint detected: Local dealership has only {inventory_stock} units left.")
+            result.applied_policies.append(AppliedPolicy(
+                policy_id="POL-MAR-03", policy_name="Dynamic Scarcity Alert",
+                family="MarTech", matched=True,
+                details=f"Stock of {inventory_stock} triggers FOMO protocol."
+            ))
+            result.ranked_actions = [
+                RankedAction(rank=1, action="TRIGGER SCARCITY ALERT", confidence=0.88,
+                             description=f"Send 'Only {inventory_stock} Left' notification immediately.",
+                             revenue_impact="+$28,000"),
+            ]
+            result.explanation_inputs = explanation
+            return result
+
+        # Rule 3: Omnichannel Accelerator (Physical-Digital Bridge)
+        if test_drives >= 1 and views >= 1:
+            result.action = RecommendedAction.VIP_SHOWROOM_INVITE
+            result.confidence = 0.94
+            result.requires_human_review = False
+            explanation["factors"].append(f"Physical/Digital bridge: User took a test drive previously but abandoned session online.")
+            result.applied_policies.append(AppliedPolicy(
+                policy_id="POL-MAR-04", policy_name="Omnichannel Accelerator",
+                family="MarTech", matched=True,
+                details="Test drive completed. Closing cycle requires VIP showroom incentive."
+            ))
+            result.ranked_actions = [
+                RankedAction(rank=1, action="SEND VIP SHOWROOM INCENTIVE", confidence=0.94,
+                             description="Offer $500 closing incentive if they return to dealership today.",
+                             revenue_impact="+$28,000"),
+            ]
+            result.explanation_inputs = explanation
+            return result
+
+        # Rule 4: High-Intent Abandoment (4+ views and used calculator)
+        if views >= 4 and used_calc:
+            result.action = RecommendedAction.OFFER_SMS
+            result.confidence = 0.92
+            result.requires_human_review = False
+            explanation["factors"].append(f"High-intent detected: {views} views on {makes} with {term_months}-month financing check on {device_type}. Session abandoned.")
+            result.applied_policies.append(AppliedPolicy(
+                policy_id="POL-MAR-01", policy_name="High-Intent Financed Abandonment",
+                family="MarTech", matched=True,
+                details=f"Triggering proactive SMS rate lock due to {views} views + {term_months}mo term check."
+            ))
+            
+            result.ranked_actions = [
+                RankedAction(rank=1, action="TRIGGER SMS WITH LOCKED APR", confidence=0.92,
+                             description=f"Send automated SMS locking in {estimated_apr}% APR for 48 hours to compel conversion.",
+                             revenue_impact="+$28,000 (potential top-line)"),
+                RankedAction(rank=2, action="SEND DEALER FOLLOW-UP", confidence=0.75,
+                             description="Route high-intent lead to local dealer BDC for phone follow-up.",
+                             revenue_impact="+$28,000 (potential top-line)"),
+            ]
+            result.explanation_inputs = explanation
+            return result
+
+        # Default fallback for low intent
+        result.action = RecommendedAction.APPROVE
+        result.confidence = 0.50
+        result.requires_human_review = False
+        explanation["factors"].append(f"Low intent. {views} views. Session treated as bounce.")
+        result.explanation_inputs = explanation
+        return result
+
     # ─── Fallback for unrecognized triggers ──────────
     result.action = RecommendedAction.ESCALATE_FOR_REVIEW
     result.confidence = 0.50
@@ -605,3 +995,4 @@ def evaluate_case(
 def encounter_type(features: dict) -> str:
     """Helper to format encounter type."""
     return features.get("encounter_type", "Visit")
+

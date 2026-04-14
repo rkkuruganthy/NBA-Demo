@@ -12,7 +12,8 @@ const GraphView = dynamic(() => import("../../components/GraphView"), {
   loading: () => <div className="p-8 text-gray-500 animate-pulse">Loading visualizer...</div>
 });
 
-const API_URL = "http://localhost:8001";
+import { API_URL } from "../../lib/config";
+import { useSidebar } from "@/context/SidebarContext";
 
 export default function ExplorerPage() {
   const [customers, setCustomers] = useState<any[]>([]);
@@ -34,7 +35,7 @@ export default function ExplorerPage() {
   // Search state
   const [searchQuery, setSearchQuery] = useState("");
   const [industryFilter, setIndustryFilter] = useState("");
-  const [popCount, setPopCount] = useState<any>({ total: 0, financial: 0, aml: 0, healthcare: 0 });
+  const [popCount, setPopCount] = useState<any>({ total: 0, financial: 0, aml: 0, healthcare: 0, ecommerce: 0 });
   const [showSearch, setShowSearch] = useState(false);
   
   const logEndRef = useRef<HTMLDivElement>(null);
@@ -95,9 +96,9 @@ export default function ExplorerPage() {
     setShowCounterInput(false);
     if (trigger) setTriggerEvent(trigger);
     else {
-      // Auto-detect trigger from ID
       if (id.startsWith("AML") || id.includes("AML")) setTriggerEvent("FRAUD_DETECTION");
       else if (id.startsWith("MED") || id.includes("MED")) setTriggerEvent("CARE_GAP_REVIEW");
+      else if (id.startsWith("ECOM") || id.includes("ECOM")) setTriggerEvent("ABANDONED_SESSION");
       else setTriggerEvent("CREDIT_LIMIT_REVIEW");
     }
     if (id) {
@@ -243,8 +244,10 @@ export default function ExplorerPage() {
     }
   };
 
+  const { isCollapsed } = useSidebar();
+
   return (
-    <div className="h-full w-full bg-gray-950 flex flex-col overflow-hidden animate-fade-in absolute inset-0 pt-0 sm:pl-64">
+    <div className="h-full w-full bg-gray-950 flex flex-col overflow-hidden animate-fade-in relative pt-0">
       {/* Top Bar */}
       <div className="border-b border-gray-800/50 bg-gray-900/50 flex flex-col shrink-0 backdrop-blur-sm z-10">
         <div className="h-14 flex items-center px-4">
@@ -255,9 +258,9 @@ export default function ExplorerPage() {
           <div className="ml-4 flex items-center gap-1.5 text-[10px] text-gray-500 bg-gray-900/50 rounded px-2 py-1 border border-gray-800/50">
             <span className="text-indigo-400 font-bold">{popCount.total.toLocaleString()}</span> users
             <span className="text-gray-700 mx-1">|</span>
-            <span className="text-blue-400">{popCount.financial.toLocaleString()}</span> FIN
             <span className="text-red-400">{popCount.aml.toLocaleString()}</span> AML
             <span className="text-emerald-400">{popCount.healthcare.toLocaleString()}</span> MED
+            <span className="text-amber-400">{popCount.ecommerce?.toLocaleString() || 0}</span> ECOM
           </div>
 
           <div className="ml-auto flex items-center gap-2 text-[10px] pr-2">
@@ -296,6 +299,14 @@ export default function ExplorerPage() {
                 className={`px-2 py-1 rounded transition-all ${activeCustomer === "CUST-MED-SAD" ? "bg-emerald-600 text-white" : "text-gray-400 hover:text-white hover:bg-gray-700"}`}>
                 MED ❌
               </button>
+              <button onClick={() => selectCustomer("CUST-ECOM-HAPPY", "ABANDONED_SESSION")}
+                className={`px-2 py-1 rounded transition-all ${activeCustomer === "CUST-ECOM-HAPPY" ? "bg-amber-600 text-white" : "text-gray-400 hover:text-white hover:bg-gray-700"}`}>
+                ECOM ✅
+              </button>
+              <button onClick={() => selectCustomer("CUST-ECOM-SAD", "ABANDONED_SESSION")}
+                className={`px-2 py-1 rounded transition-all ${activeCustomer === "CUST-ECOM-SAD" ? "bg-amber-600 text-white" : "text-gray-400 hover:text-white hover:bg-gray-700"}`}>
+                ECOM ❌
+              </button>
             </div>
           </div>
         </div>
@@ -313,16 +324,17 @@ export default function ExplorerPage() {
                 autoFocus
               />
               <div className="flex gap-1">
-                {["financial", "aml", "healthcare"].map(ind => (
+                {["financial", "aml", "healthcare", "ecommerce"].map(ind => (
                   <button key={ind} onClick={() => handleIndustryFilter(ind)}
                     className={`px-2 py-1.5 rounded text-[10px] font-semibold uppercase transition-all border ${
                       industryFilter === ind
                         ? ind === "financial" ? "bg-blue-600 border-blue-500 text-white" :
                           ind === "aml" ? "bg-red-600 border-red-500 text-white" :
-                          "bg-emerald-600 border-emerald-500 text-white"
+                          ind === "healthcare" ? "bg-emerald-600 border-emerald-500 text-white" :
+                          "bg-amber-600 border-amber-500 text-white"
                         : "border-gray-700 text-gray-400 hover:text-white hover:bg-gray-800"
                     }`}>
-                    {ind === "financial" ? "💳 FIN" : ind === "aml" ? "🚨 AML" : "🏥 MED"}
+                    {ind === "financial" ? "💳 FIN" : ind === "aml" ? "🚨 AML" : ind === "healthcare" ? "🏥 MED" : "🛒 ECOM"}
                   </button>
                 ))}
               </div>
@@ -354,17 +366,17 @@ export default function ExplorerPage() {
         )}
       </div>
 
-      <div className="flex-1 overflow-hidden flex flex-row">
+      <PanelGroup orientation="horizontal" className="flex-1 overflow-hidden">
         
         {/* LEFT PANE: Action/Log */}
-        <div className="w-[30%] min-w-[300px] max-w-[400px] bg-gray-900/30 flex flex-col z-0 border-r border-gray-800/50 relative">
+        <Panel defaultSize={25} minSize={20} className="bg-gray-900/30 flex flex-col z-0 relative">
           <div className="p-3 border-b border-gray-800/50 bg-gray-900/40 flex items-center gap-2">
             <MessageSquare className="w-4 h-4 text-gray-400" />
             <h2 className="text-xs font-semibold text-gray-300 uppercase tracking-wider">Engine Log</h2>
           </div>
           
           <div className="flex-1 overflow-y-auto p-4 space-y-4 font-mono text-xs custom-scrollbar">
-            {logs.map((log) => (
+            {(logs || []).map((log) => (
               <div key={log.id} className={`flex flex-col ${log.role === 'user' ? 'items-end' : 'items-start'}`}>
                 <div className={`
                   max-w-[90%] rounded-lg p-3 relative
@@ -400,7 +412,7 @@ export default function ExplorerPage() {
                           {log.decision.counter_offer.conditions?.length > 0 && (
                             <div className="space-y-1">
                               <p className="text-[10px] text-amber-300 font-semibold">Conditions:</p>
-                              {log.decision.counter_offer.conditions.map((c: string, i: number) => (
+                              {(log.decision.counter_offer.conditions || []).map((c: string, i: number) => (
                                 <p key={i} className="text-[10px] text-amber-100/60 pl-2">• {c}</p>
                               ))}
                             </div>
@@ -409,7 +421,7 @@ export default function ExplorerPage() {
                       )}
                       
                       {/* Ranked Actions */}
-                      {log.decision.ranked_actions?.length > 0 && (
+                      {(log.decision.ranked_actions || []).length > 0 && (
                         <div className="mt-2 space-y-1.5">
                           <p className="text-[10px] text-gray-400 font-semibold uppercase tracking-wider">Ranked Actions:</p>
                           {log.decision.ranked_actions.map((ra: any) => (
@@ -418,7 +430,7 @@ export default function ExplorerPage() {
                                 <span className={`font-bold ${ra.rank === 1 ? 'text-indigo-300' : 'text-gray-400'}`}>
                                   #{ra.rank} {ra.action}
                                 </span>
-                                <span className="text-gray-500">{(ra.confidence * 100).toFixed(0)}%</span>
+                                <span className="text-gray-500">{((ra.confidence || 0) * 100).toFixed(0)}%</span>
                               </div>
                               <p className="text-gray-400">{ra.description}</p>
                               {ra.revenue_impact && <p className="text-emerald-400 mt-0.5">{ra.revenue_impact}</p>}
@@ -444,7 +456,7 @@ export default function ExplorerPage() {
                   {log.negotiation?.counter_offer && (
                     <div className="mt-2 p-2 bg-amber-950/40 border border-amber-600/20 rounded text-[10px]">
                       <p className="text-amber-200 font-semibold mb-1">Engine Counter: {log.negotiation.counter_offer.suggested_value}</p>
-                      {log.negotiation.counter_offer.conditions?.map((c: string, i: number) => (
+                      {(log.negotiation.counter_offer.conditions || []).map((c: string, i: number) => (
                         <p key={i} className="text-amber-100/50 pl-2">• {c}</p>
                       ))}
                     </div>
@@ -470,11 +482,13 @@ export default function ExplorerPage() {
               <div className="w-full bg-gray-950 border border-gray-800 rounded-md px-3 py-2 text-xs text-brand-blue-300 font-semibold text-center flex items-center justify-center gap-2">
                 <AlertCircle className="w-3.5 h-3.5 text-brand-blue-400" />
                 {triggerEvent === "CREDIT_LIMIT_REVIEW" ? "Credit Limit Review" :
-                 triggerEvent === "FRAUD_DETECTION" ? "AML Fraud Detection" : "Care Gap Review"}
+                 triggerEvent === "FRAUD_DETECTION" ? "AML Fraud Detection" : 
+                 triggerEvent === "ABANDONED_SESSION" ? "Intent-to-Lease Conversion" : 
+                 "Care Gap Review"}
               </div>
 
               {/* Negotiation Action Buttons — shown when a decision with counter-offer is active */}
-              {activeDecision && (activeDecision.counter_offer || activeDecision.ranked_actions?.length > 0) ? (
+              {activeDecision && (activeDecision.counter_offer || (activeDecision.ranked_actions || []).length > 0) ? (
                 <div className="space-y-2">
                   <p className="text-[10px] text-amber-400 font-semibold uppercase tracking-wider text-center">Respond to Decision</p>
                   
@@ -541,19 +555,27 @@ export default function ExplorerPage() {
               )}
             </div>
           </div>
-        </div>
+        </Panel>
+
+        <PanelResizeHandle className="w-1 bg-gray-800/50 hover:bg-indigo-500/50 transition-colors cursor-col-resize flex items-center justify-center">
+          <div className="h-8 w-0.5 bg-gray-700 rounded-full" />
+        </PanelResizeHandle>
 
         {/* CENTER PANE: Graph */}
-        <div className="flex-1 relative bg-[#0a0f1c]">
+        <Panel defaultSize={45} minSize={30} className="relative bg-[#0a0f1c]">
           <GraphView 
             data={graphData} 
             onNodeClick={setSelectedNode} 
             selectedNodeId={selectedNode?.id} 
           />
-        </div>
+        </Panel>
+
+        <PanelResizeHandle className="w-1 bg-gray-800/50 hover:bg-indigo-500/50 transition-colors cursor-col-resize flex items-center justify-center">
+          <div className="h-8 w-0.5 bg-gray-700 rounded-full" />
+        </PanelResizeHandle>
 
         {/* RIGHT PANE: Properties */}
-        <div className="w-[30%] min-w-[300px] max-w-[400px] bg-gray-900/30 flex flex-col border-l border-gray-800/50 relative overflow-hidden">
+        <Panel defaultSize={30} minSize={20} className="bg-gray-900/30 flex flex-col border-l border-gray-800/50 relative overflow-hidden">
             <div className="p-3 border-b border-gray-800/50 bg-gray-900/40 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <BrainCircuit className="w-4 h-4 text-emerald-400" />
@@ -582,14 +604,14 @@ export default function ExplorerPage() {
                   </div>
 
                   <div className="space-y-px rounded-lg overflow-hidden border border-gray-800/50">
-                    {Object.entries(selectedNode.properties).map(([key, value]) => {
+                    {Object.entries(selectedNode.properties || {}).map(([key, value]) => {
                       // Hide raw fields that we display in the reasoning section
                       if (key === 'id' || key === 'decision_id' || key === 'reasoning' || key === 'graph_features' || key === 'policies_applied') return null;
                       return (
                         <div key={key} className="bg-gray-900/50 px-3 py-2 flex flex-col border-b border-gray-800/50 last:border-0">
                           <span className="text-[10px] text-gray-500 uppercase tracking-wider mb-0.5">{key.replace(/_/g, ' ')}</span>
                           <span className={`${typeof value === 'number' ? 'font-mono text-cyan-300' : 'text-gray-200'} text-xs break-words`}>
-                            {typeof value === 'number' && key === 'confidence' ? `${(value * 100).toFixed(1)}%` : String(value)}
+                            {typeof value === 'number' && key === 'confidence' ? `${((value || 0) * 100).toFixed(1)}%` : String(value)}
                           </span>
                         </div>
                       );
@@ -599,14 +621,14 @@ export default function ExplorerPage() {
                   {selectedNode.labels?.includes("Decision") && (
                     <>
                       {/* Decision Reasoning Section */}
-                      {selectedNode.properties.reasoning && (
+                      {selectedNode.properties?.reasoning && (
                         <div className="mt-4 p-3 rounded-lg border border-indigo-500/20 bg-indigo-950/30">
                           <h4 className="text-xs font-semibold text-indigo-300 mb-2 flex items-center gap-1.5 uppercase tracking-wider">
                             <BrainCircuit className="w-3.5 h-3.5" />
                             Why This Decision Was Made
                           </h4>
                           <div className="space-y-1.5">
-                            {selectedNode.properties.reasoning.split('\n').map((line: string, i: number) => (
+                            {String(selectedNode.properties.reasoning).split('\n').map((line: string, i: number) => (
                               <p key={i} className="text-[11px] text-indigo-100/80 leading-relaxed">{line}</p>
                             ))}
                           </div>
@@ -614,14 +636,14 @@ export default function ExplorerPage() {
                       )}
 
                       {/* Graph Features Extracted */}
-                      {selectedNode.properties.graph_features && selectedNode.properties.graph_features !== 'N/A' && (
+                      {selectedNode.properties?.graph_features && selectedNode.properties?.graph_features !== 'N/A' && (
                         <div className="mt-3 p-3 rounded-lg border border-cyan-500/20 bg-cyan-950/20">
                           <h4 className="text-xs font-semibold text-cyan-300 mb-2 flex items-center gap-1.5 uppercase tracking-wider">
                             <Network className="w-3.5 h-3.5" />
                             Graph Features Extracted
                           </h4>
                           <div className="flex flex-wrap gap-1.5">
-                            {selectedNode.properties.graph_features.split(' | ').map((feat: string, i: number) => {
+                            {String(selectedNode.properties.graph_features).split(' | ').map((feat: string, i: number) => {
                               const [k, v] = feat.split(': ');
                               const isAlert = v === 'True' || v === 'true';
                               const isDanger = (k?.includes('threat') || k?.includes('critical') || k?.includes('high_risk')) && isAlert;
@@ -640,7 +662,7 @@ export default function ExplorerPage() {
                       )}
 
                       {/* Policies Applied */}
-                      {selectedNode.properties.policies_applied && (
+                      {selectedNode.properties?.policies_applied && (
                         <div className="mt-3 p-3 rounded-lg border border-violet-500/20 bg-violet-950/20">
                           <h4 className="text-xs font-semibold text-violet-300 mb-2 flex items-center gap-1.5 uppercase tracking-wider">
                             <AlertCircle className="w-3.5 h-3.5" />
@@ -675,15 +697,15 @@ export default function ExplorerPage() {
                         Negotiation Step
                       </h4>
                       <p className="text-[10px] text-gray-400">
-                        Step #{selectedNode.properties.step_number} — {selectedNode.properties.customer_response} → {selectedNode.properties.engine_action}
+                        Step #{selectedNode.properties?.step_number} — {selectedNode.properties?.customer_response} → {selectedNode.properties?.engine_action}
                       </p>
                     </div>
                   )}
                 </div>
               )}
             </div>
-          </div>
-      </div>
+        </Panel>
+      </PanelGroup>
     </div>
   );
 }

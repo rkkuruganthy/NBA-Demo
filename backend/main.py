@@ -2,7 +2,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from app.db import verify_connectivity, close_driver, execute_query
-from app.routers import cases, decisions, explorer
+from app.routers import cases, decisions, explorer, temporal, analytics, ecommerce
 from app.services.graph_init import init_graph, get_graph_stats
 import logging
 
@@ -26,8 +26,8 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="NBA Context Engine",
-    description="Next Best Action recommendation engine for financial services",
-    version="0.1.0",
+    description="Next Best Action recommendation engine with Context Graph intelligence across Financial, AML, Healthcare, and Insurance verticals",
+    version="2.0.0",
     lifespan=lifespan,
 )
 
@@ -44,6 +44,9 @@ app.add_middleware(
 app.include_router(cases.router)
 app.include_router(decisions.router)
 app.include_router(explorer.router)
+app.include_router(temporal.router)
+app.include_router(analytics.router)
+app.include_router(ecommerce.router)
 
 
 @app.get("/health")
@@ -53,7 +56,7 @@ async def health_check():
     return {
         "status": "ok",
         "service": "nba-backend",
-        "version": "0.1.0",
+        "version": "2.0.0",
         "neo4j": "connected" if neo4j_ok else "disconnected",
     }
 
@@ -95,6 +98,12 @@ async def list_customers(search: str = "", industry: str = "", limit: int = 50, 
     elif industry == "aml":
         where_clauses = ["p:Person"]
         where_clauses.append("p.id STARTS WITH 'AML' OR p.id STARTS WITH 'CUST-AML'")
+    elif industry == "insurance":
+        where_clauses = ["p:Person"]
+        where_clauses.append("p.id STARTS WITH 'INS' OR p.id STARTS WITH 'CUST-INS'")
+    elif industry == "ecommerce":
+        where_clauses = ["p:Person"]
+        where_clauses.append("p.id STARTS WITH 'ECOM' OR p.id STARTS WITH 'CUST-ECOM'")
     elif industry == "healthcare":
         where_clauses = ["p:Patient"]
     
@@ -139,12 +148,14 @@ async def customer_count():
             count(p) AS total,
             sum(CASE WHEN p:Patient THEN 1 ELSE 0 END) AS healthcare,
             sum(CASE WHEN p:Person AND (p.id STARTS WITH 'FIN' OR p.id STARTS WITH 'CUST-CLI') THEN 1 ELSE 0 END) AS financial,
-            sum(CASE WHEN p:Person AND (p.id STARTS WITH 'AML' OR p.id STARTS WITH 'CUST-AML') THEN 1 ELSE 0 END) AS aml
+            sum(CASE WHEN p:Person AND (p.id STARTS WITH 'AML' OR p.id STARTS WITH 'CUST-AML') THEN 1 ELSE 0 END) AS aml,
+            sum(CASE WHEN p:Person AND (p.id STARTS WITH 'INS' OR p.id STARTS WITH 'CUST-INS') THEN 1 ELSE 0 END) AS insurance,
+            sum(CASE WHEN p:Person AND (p.id STARTS WITH 'ECOM' OR p.id STARTS WITH 'CUST-ECOM') THEN 1 ELSE 0 END) AS ecommerce
     """)
     if results:
         r = results[0]
-        return {"total": r["total"], "financial": r["financial"], "aml": r["aml"], "healthcare": r["healthcare"]}
-    return {"total": 0, "financial": 0, "aml": 0, "healthcare": 0}
+        return {"total": r["total"], "financial": r["financial"], "aml": r["aml"], "healthcare": r["healthcare"], "insurance": r["insurance"], "ecommerce": r["ecommerce"]}
+    return {"total": 0, "financial": 0, "aml": 0, "healthcare": 0, "insurance": 0, "ecommerce": 0}
 
 
 @app.get("/")
@@ -152,6 +163,14 @@ async def root():
     """Root endpoint."""
     return {
         "service": "NBA Context Engine",
-        "version": "0.1.0",
+        "version": "2.0.0",
         "docs": "/docs",
+        "verticals": ["Financial Services", "AML/Fraud", "Healthcare", "Insurance", "E-Commerce"],
+        "capabilities": [
+            "Context Graph Decision Engine",
+            "Feedback Loop (Outcome Tracking)",
+            "Temporal Intelligence (Behavioral Drift)",
+            "Decision Replay (What-If Analysis)",
+            "Population Analytics",
+        ],
     }

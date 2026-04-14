@@ -1,5 +1,5 @@
 """
-Cases API router — case evaluation, retrieval, and negotiation.
+Cases API router — case evaluation, retrieval, negotiation, replay, and what-if.
 """
 
 from fastapi import APIRouter, HTTPException
@@ -271,3 +271,29 @@ async def get_case(decision_id: str):
 async def list_cases(limit: int = 20):
     """List recent cases."""
     return get_all_decisions(limit=limit)
+
+
+@router.post("/{decision_id}/replay")
+async def replay_case(decision_id: str):
+    """
+    Replay a past decision against the CURRENT graph state.
+    Returns comparison: original vs replayed result with delta analysis.
+    """
+    from app.services.replay_service import replay_decision
+    result = replay_decision(decision_id)
+    if "error" in result:
+        raise HTTPException(status_code=404, detail=result["error"])
+    return result
+
+
+@router.post("/{decision_id}/what-if")
+async def what_if_case(decision_id: str, overrides: dict):
+    """
+    Re-run a decision with altered parameters.
+    E.g., "What if utilization was 50% instead of 92%?"
+    """
+    from app.services.replay_service import what_if_analysis
+    result = what_if_analysis(decision_id, overrides)
+    if "error" in result:
+        raise HTTPException(status_code=404, detail=result["error"])
+    return result

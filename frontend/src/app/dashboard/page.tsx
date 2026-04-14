@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { API_URL } from "@/lib/config";
 
 interface HealthStatus {
   status: string;
@@ -14,7 +15,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("http://localhost:8001/health")
+    fetch(`${API_URL}/health`)
       .then((res) => res.json())
       .then((data) => {
         setHealth(data);
@@ -61,7 +62,7 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="animate-fade-in">
+    <div className="animate-fade-in p-8 h-full overflow-auto">
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-white mb-1">Dashboard</h1>

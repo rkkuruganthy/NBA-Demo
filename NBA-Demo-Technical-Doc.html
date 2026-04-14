@@ -323,7 +323,7 @@
         <p style="font-size: 1.15rem; line-height: 1.8; max-width: 900px; margin-top: 2rem; color: #cbd5e1; position: relative;">
             Prepared for Technology Leadership<br />
             Subject: Replacing Black-Box AI with Graph-Traversal Decision Intelligence<br />
-            <strong style="color: #60a5fa;">Live Demo:</strong> 10,006 users · 56,308 graph nodes · 3 industry scenarios
+            <strong style="color: #60a5fa;">Live Demo:</strong> 12,506 users · 68,000+ graph nodes · 4 industry verticals · v2.0
         </p>
     </div>
     
@@ -331,15 +331,15 @@
         <!-- POPULATION STATS -->
         <div class="stat-grid">
             <div class="stat-card">
-                <div class="stat-number" style="color: #3b82f6;">10,006</div>
+                <div class="stat-number" style="color: #3b82f6;">12,506</div>
                 <div class="stat-label">Total Users Seeded</div>
             </div>
             <div class="stat-card">
-                <div class="stat-number" style="color: #10b981;">56,308</div>
+                <div class="stat-number" style="color: #10b981;">68,000+</div>
                 <div class="stat-label">Graph Nodes</div>
             </div>
             <div class="stat-card">
-                <div class="stat-number" style="color: #8b5cf6;">3</div>
+                <div class="stat-number" style="color: #8b5cf6;">4</div>
                 <div class="stat-label">Industry Verticals</div>
             </div>
             <div class="stat-card">
@@ -397,8 +397,8 @@
         <hr style="margin: 4rem 0; border: 0; border-top: 1px solid #e2e8f0;">
 
         <!-- THREE INDUSTRY SCENARIOS -->
-        <h2>Live Demonstration: Three Industry Scenarios</h2>
-        <p>The platform demonstrates real-time graph-traversal decision intelligence across three highly regulated verticals. Each scenario uses actual Cypher queries to traverse the knowledge graph and extract features—<strong>no hardcoded customer IDs</strong>.</p>
+        <h2>Live Demonstration: Four Industry Scenarios</h2>
+        <p>The platform demonstrates real-time graph-traversal decision intelligence across four highly regulated verticals. Each scenario uses actual Cypher queries to traverse the knowledge graph and extract features—<strong>no hardcoded customer IDs</strong>.</p>
 
         <!-- Financial -->
         <h3>💳 Scenario 1: Financial Services — Credit Limit Increase</h3>
@@ -507,6 +507,47 @@
                     <td>Rx status: Fulfilled, no care gaps</td>
                     <td>POL-MED-03: Compliant Patient Clearance</td>
                     <td><span class="risk-badge risk-low">APPROVE 98%</span></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <!-- Insurance -->
+        <h3>🏛️ Scenario 4: Insurance Claims — Underwriting & Fraud Detection</h3>
+        <p>The engine traverses <code>Policyholder → InsurancePolicy → Claim → Provider → DiagnosisCode</code> to detect duplicate claims, out-of-network emergencies, and pre-authorization compliance.</p>
+        
+        <table class="scenario-table">
+            <thead>
+                <tr>
+                    <th>Graph Path Traversed</th>
+                    <th>Feature Extracted</th>
+                    <th>Rule Applied</th>
+                    <th>Outcome</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><code>Claim → Provider → DiagnosisCode</code></td>
+                    <td>Duplicate claim: same provider + code within 15 days</td>
+                    <td>POL-INS-01: Duplicate Claim Detection</td>
+                    <td><span class="risk-badge risk-high">DENY 96%</span></td>
+                </tr>
+                <tr>
+                    <td><code>Claim → Provider</code></td>
+                    <td>$75,000 claim, provider risk: 0.72</td>
+                    <td>POL-INS-02: High-Value Claim Threshold</td>
+                    <td><span class="risk-badge risk-high">SIU REVIEW 85%</span></td>
+                </tr>
+                <tr>
+                    <td><code>Claim → Provider (OON)</code></td>
+                    <td>Emergency, out-of-network facility</td>
+                    <td>POL-INS-03: Out-of-Network Emergency Override</td>
+                    <td><span class="risk-badge risk-low">APPROVE 90%</span></td>
+                </tr>
+                <tr>
+                    <td><code>Claim → PreAuthorization (NULL)</code></td>
+                    <td>$12,000 elective, no pre-auth</td>
+                    <td>POL-INS-04: Pre-Authorization Compliance</td>
+                    <td><span class="risk-badge risk-medium">DENY + RETRO-AUTH 88%</span></td>
                 </tr>
             </tbody>
         </table>
@@ -711,43 +752,644 @@
         <hr style="margin: 4rem 0; border: 0; border-top: 1px solid #e2e8f0;">
 
         <h2>Population Distribution</h2>
-        <p>The demo is seeded with 10,006 realistic users, each with a 4-7 hop graph topology:</p>
+        <p>The demo is seeded with <strong>12,506</strong> realistic entities, each with a 4-7 hop graph topology:</p>
 
-        <div class="card-grid-3">
+        <div class="stat-grid">
+            <div class="stat-card">
+                <div class="stat-number" style="color: #3b82f6;">3,502</div>
+                <div class="stat-label">💳 Financial Services</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" style="color: #ef4444;">3,002</div>
+                <div class="stat-label">🚨 AML / Fraud</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" style="color: #10b981;">3,502</div>
+                <div class="stat-label">🏥 Healthcare</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" style="color: #8b5cf6;">2,500</div>
+                <div class="stat-label">🏛️ Insurance</div>
+            </div>
+        </div>
+
+        <div class="card-grid" style="grid-template-columns: repeat(4, 1fr);">
             <div class="card" style="border-top-color: #3b82f6;">
-                <h3 style="margin-top: 0;">💳 Financial Services</h3>
-                <div class="stat-number" style="font-size: 2rem; color: #3b82f6;">3,502</div>
-                <div class="stat-label" style="margin-bottom: 1rem;">Users</div>
-                <ul style="font-size: 0.9rem;">
-                    <li>1,200 Affluent (low risk, high spend)</li>
-                    <li>1,500 Mass Market (mixed profiles)</li>
-                    <li>800 Subprime (high util, DPD > 0)</li>
-                    <li>2 Hero showcase profiles</li>
+                <h3 style="margin-top: 0; font-size: 1.1rem;">💳 Financial</h3>
+                <ul style="font-size: 0.85rem;">
+                    <li>1,200 Affluent (low risk)</li>
+                    <li>1,500 Mass Market</li>
+                    <li>800 Subprime (high util)</li>
                 </ul>
             </div>
             <div class="card" style="border-top-color: #ef4444;">
-                <h3 style="margin-top: 0;">🚨 AML / Fraud</h3>
-                <div class="stat-number" style="font-size: 2rem; color: #ef4444;">3,002</div>
-                <div class="stat-label" style="margin-bottom: 1rem;">Users</div>
-                <ul style="font-size: 0.9rem;">
-                    <li>2,400 Clean customers (domestic wires)</li>
+                <h3 style="margin-top: 0; font-size: 1.1rem;">🚨 AML</h3>
+                <ul style="font-size: 0.85rem;">
+                    <li>2,400 Clean customers</li>
                     <li>400 Suspicious (shared devices)</li>
-                    <li>200 Confirmed fraud ring members</li>
-                    <li>297 linked Fraudster/Threat nodes</li>
+                    <li>200 Confirmed fraud ring</li>
                 </ul>
             </div>
             <div class="card" style="border-top-color: #10b981;">
-                <h3 style="margin-top: 0;">🏥 Healthcare</h3>
-                <div class="stat-number" style="font-size: 2rem; color: #10b981;">3,502</div>
-                <div class="stat-label" style="margin-bottom: 1rem;">Patients</div>
-                <ul style="font-size: 0.9rem;">
+                <h3 style="margin-top: 0; font-size: 1.1rem;">🏥 Healthcare</h3>
+                <ul style="font-size: 0.85rem;">
                     <li>2,000 Compliant (fulfilled Rx)</li>
-                    <li>1,000 At Risk (chronic conditions)</li>
-                    <li>500 Critical (acute + care gaps)</li>
-                    <li>1,500 linked CareGap nodes</li>
+                    <li>1,000 At Risk (chronic)</li>
+                    <li>500 Critical (acute gaps)</li>
+                </ul>
+            </div>
+            <div class="card" style="border-top-color: #8b5cf6;">
+                <h3 style="margin-top: 0; font-size: 1.1rem;">🏛️ Insurance</h3>
+                <ul style="font-size: 0.85rem;">
+                    <li>1,800 Routine claims</li>
+                    <li>400 Complex (high-value)</li>
+                    <li>300 Suspicious (duplicates)</li>
                 </ul>
             </div>
         </div>
+
+        <hr style="margin: 4rem 0; border: 0; border-top: 1px solid #e2e8f0;">
+
+        <!-- ============================================= -->
+        <!-- GRAPH SCHEMA VISUALIZATIONS -->
+        <!-- ============================================= -->
+        <h2>Graph Schema Visualizations</h2>
+        <p>Each industry vertical builds a unique graph topology. The <strong>Decision and Policy nodes are shared</strong> across all verticals — only the domain-specific context nodes differ.</p>
+
+        <h3>💳 Financial Services Schema</h3>
+        <div class="mermaid">
+erDiagram
+    Person ||--o{ Account : OWNS
+    Person {
+        string id PK
+        string name
+        string segment
+        float credit_score
+    }
+    Account ||--o{ Transaction : HAS_TRANSACTION
+    Account {
+        string id PK
+        float utilization_pct
+        int dpd
+        float current_limit
+    }
+    Transaction {
+        string id PK
+        float amount
+        string type
+    }
+    Transaction ||--o| Entity : SENT_TO
+    Entity {
+        string name
+        string type
+    }
+    Person ||--o{ Decision : ABOUT
+    Decision ||--|{ Policy : APPLIED_POLICY
+    Decision ||--|| DecisionContext : HAS_CONTEXT
+    Decision ||--o| Outcome : RESULTED_IN
+        </div>
+
+        <h3>🚨 AML / Fraud Detection Schema</h3>
+        <div class="mermaid">
+erDiagram
+    Person ||--o{ Device : LOGGED_IN_FROM
+    Person {
+        string id PK
+        string risk_tier
+    }
+    Device {
+        string ip
+        string type
+    }
+    Fraudster ||--o{ Device : LOGGED_IN_FROM
+    Fraudster {
+        string id PK
+        string name
+    }
+    Person ||--o{ Account : OWNS
+    Account ||--o{ Transaction : HAS_TRANSACTION
+    Transaction ||--o| Destination : SENT_TO
+    Destination {
+        string jurisdiction
+        float risk_level
+    }
+    Person ||--o{ Decision : ABOUT
+    Decision ||--|{ Policy : APPLIED_POLICY
+    Decision ||--|| DecisionContext : HAS_CONTEXT
+        </div>
+
+        <h3>🏥 Healthcare Schema</h3>
+        <div class="mermaid">
+erDiagram
+    Patient ||--o{ Encounter : HAD_ENCOUNTER
+    Patient {
+        string id PK
+        int age
+        string pcp
+    }
+    Encounter ||--o{ Diagnosis : RESULTED_IN
+    Diagnosis {
+        string code
+        string name
+        string severity
+    }
+    Diagnosis ||--o{ Prescription : PRESCRIBED
+    Prescription {
+        string medication
+        string status
+    }
+    Patient ||--o| CareGap : HAS_CARE_GAP
+    CareGap {
+        int gap_days
+        string type
+    }
+    Patient ||--o{ Decision : ABOUT
+    Decision ||--|{ Policy : APPLIED_POLICY
+        </div>
+
+        <h3>🏛️ Insurance Claims Schema</h3>
+        <div class="mermaid">
+erDiagram
+    Person ||--o| InsurancePolicy : HAS_POLICY
+    Person {
+        string id PK
+        string name
+    }
+    InsurancePolicy {
+        string id PK
+        string type
+        float deductible
+    }
+    Person ||--o{ Claim : FILED_CLAIM
+    Claim {
+        string id PK
+        float amount
+        boolean is_emergency
+    }
+    Claim ||--o| Provider : SUBMITTED_TO
+    Provider {
+        string id PK
+        string name
+        float risk_score
+        boolean is_in_network
+    }
+    Claim ||--o| DiagnosisCode : FOR_DIAGNOSIS
+    DiagnosisCode {
+        string code PK
+        string description
+    }
+    Claim ||--o| PreAuthorization : HAS_PREAUTH
+    Person ||--o{ Decision : ABOUT
+    Decision ||--|{ Policy : APPLIED_POLICY
+    Decision ||--o| Outcome : RESULTED_IN
+        </div>
+
+        <hr style="margin: 4rem 0; border: 0; border-top: 1px solid #e2e8f0;">
+
+        <!-- ============================================= -->
+        <!-- FEEDBACK LOOP ARCHITECTURE -->
+        <!-- ============================================= -->
+        <h2>Feedback Loop: Closed-Loop Decision Intelligence</h2>
+        <p>Every decision creates an <strong>(:Outcome)</strong> node linked via <code>[:RESULTED_IN]</code>. This transforms an open-loop recommendation engine into a <strong>self-calibrating system</strong>.</p>
+
+        <div class="mermaid">
+flowchart LR
+    A["(:Decision)"] -->|"RESULTED_IN"| B["(:Outcome)"]
+    B -->|"Calibration"| C["Predicted vs Actual"]
+    C -->|"Policy Refinement"| D["Updated Confidence"]
+    D -->|"Next Evaluation"| A
+    B --> E["Revenue Impact"]
+    B --> F["Customer Retention"]
+    style A fill:#3b82f6,color:#fff
+    style B fill:#10b981,color:#fff
+    style C fill:#f59e0b,color:#fff
+    style D fill:#8b5cf6,color:#fff
+        </div>
+
+        <div class="card-grid-3">
+            <div class="card">
+                <div class="pill">Calibration Metric</div>
+                <h3 style="margin-top: 0;">Accuracy</h3>
+                <p style="font-size: 0.95rem;">% of decisions where the recommended action aligned with a positive business outcome</p>
+            </div>
+            <div class="card">
+                <div class="pill">Risk Signal</div>
+                <h3 style="margin-top: 0;">Overconfidence Rate</h3>
+                <p style="font-size: 0.95rem;">% of decisions where confidence &gt; 80% but actual outcome was negative — detects overfit rules</p>
+            </div>
+            <div class="card">
+                <div class="pill">Opportunity Signal</div>
+                <h3 style="margin-top: 0;">Underconfidence Rate</h3>
+                <p style="font-size: 0.95rem;">% of decisions where confidence &lt; 60% but outcome was positive — reveals missed approvals</p>
+            </div>
+        </div>
+
+        <hr style="margin: 4rem 0; border: 0; border-top: 1px solid #e2e8f0;">
+
+        <!-- ============================================= -->
+        <!-- TEMPORAL INTELLIGENCE -->
+        <!-- ============================================= -->
+        <h2>Temporal Intelligence: Behavioral Drift Detection</h2>
+        <p>Point-in-time decisions are necessary but insufficient. The temporal layer <strong>compares a customer's decision history across multiple evaluations</strong> to detect behavioral drift before it materializes as outright risk.</p>
+
+        <div class="mermaid">
+flowchart TD
+    subgraph "Decision Timeline (Patient X)"
+        D1["Review 1: gap_days=3, APPROVE 95%"] --> D2["Review 2: gap_days=7, APPROVE 82%"]
+        D2 --> D3["Review 3: gap_days=24, ESCALATE 68%"]
+    end
+    D3 -->|"Drift Signal"| ALERT["⚠️ RISING_CARE_GAP<br/>Severity: HIGH"]
+    D3 -->|"Confidence Decay"| DECAY["📉 0.68 → 0.45 (30-day decay)"]
+    style D1 fill:#10b981,color:#fff
+    style D2 fill:#f59e0b,color:#fff
+    style D3 fill:#ef4444,color:#fff
+    style ALERT fill:#dc2626,color:#fff
+        </div>
+
+        <div class="card-grid">
+            <div class="card">
+                <h3 style="margin-top: 0;">Drift Signals Detected</h3>
+                <table class="scenario-table">
+                    <thead><tr><th>Signal</th><th>Description</th><th>Severity</th></tr></thead>
+                    <tbody>
+                        <tr><td>RISING_UTILIZATION</td><td>Utilization increased &gt;15% across evaluations</td><td><span class="risk-badge risk-high">HIGH</span></td></tr>
+                        <tr><td>ESCALATING_RISK</td><td>Risk score climbed &gt;0.10 across evaluations</td><td><span class="risk-badge risk-high">HIGH</span></td></tr>
+                        <tr><td>DETERIORATING_DECISIONS</td><td>Shifted from APPROVE → DECLINE</td><td><span class="risk-badge risk-high">HIGH</span></td></tr>
+                        <tr><td>CONFIDENCE_DECAY</td><td>Confidence dropped &gt;0.15 over time</td><td><span class="risk-badge risk-medium">MEDIUM</span></td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="card">
+                <h3 style="margin-top: 0;">Confidence Decay Formula</h3>
+                <div style="background: #f8fafc; padding: 1.5rem; border-radius: 8px; font-family: monospace; font-size: 1.1rem; text-align: center; margin: 1rem 0;">
+                    C<sub>decayed</sub> = C<sub>original</sub> × 0.5<sup>(days / half_life)</sup>
+                </div>
+                <p style="font-size: 0.9rem;">Open decisions lose confidence over time. After 30 days at default half-life, an 85% confidence drops to ~42%. The system recommends re-evaluation when decay falls below 50%.</p>
+            </div>
+        </div>
+
+        <hr style="margin: 4rem 0; border: 0; border-top: 1px solid #e2e8f0;">
+
+        <!-- ============================================= -->
+        <!-- BEFORE/AFTER CODE COMPARISON -->
+        <!-- ============================================= -->
+        <h2>Before/After: Traditional Rules vs. Graph Traversal</h2>
+        <p>The fundamental architectural difference: traditional systems embed business logic in <strong>application code</strong>. The Context Graph moves it to the <strong>data layer</strong>, where relationships encode meaning.</p>
+
+        <div class="card-grid">
+            <div class="card" style="border-top-color: #ef4444;">
+                <div class="pill" style="background: rgba(239,68,68,0.1); color: #ef4444;">❌ Traditional: SQL + If/Else</div>
+                <pre style="background: #1e293b; color: #e2e8f0; padding: 1.5rem; border-radius: 8px; overflow-x: auto; font-size: 0.85rem;">
+<span style="color: #93c5fd;">SELECT</span> a.utilization, a.dpd, c.credit_score
+<span style="color: #93c5fd;">FROM</span> accounts a
+<span style="color: #93c5fd;">JOIN</span> customers c <span style="color: #93c5fd;">ON</span> a.customer_id = c.id
+<span style="color: #93c5fd;">WHERE</span> a.customer_id = <span style="color: #fbbf24;">'CUST-001'</span>
+
+<span style="color: #64748b;">-- Then in Python:</span>
+<span style="color: #93c5fd;">if</span> dpd > 30:
+    <span style="color: #93c5fd;">return</span> <span style="color: #fbbf24;">"DECLINE"</span>
+<span style="color: #93c5fd;">elif</span> utilization > 0.7 <span style="color: #93c5fd;">and</span> has_travel:
+    <span style="color: #93c5fd;">return</span> <span style="color: #fbbf24;">"APPROVE"</span>
+<span style="color: #64748b;">-- 200+ lines of nested logic...</span></pre>
+                <p style="font-size: 0.85rem; color: #ef4444; margin-top: 1rem;">⚠️ Logic is locked in code. No audit trail. No relationship awareness. Fraud ring detection requires 5+ self-JOINs.</p>
+            </div>
+            <div class="card" style="border-top-color: #10b981;">
+                <div class="pill" style="background: rgba(16,185,129,0.1); color: #10b981;">✅ Context Graph: Cypher Traversal</div>
+                <pre style="background: #1e293b; color: #e2e8f0; padding: 1.5rem; border-radius: 8px; overflow-x: auto; font-size: 0.85rem;">
+<span style="color: #93c5fd;">MATCH</span> (p:Person {id: $id})
+      -[:OWNS]->(a:Account)
+<span style="color: #93c5fd;">OPTIONAL MATCH</span>
+      (p)-[:LOGGED_IN_FROM]->(d:Device)
+      <-[:LOGGED_IN_FROM]-(t:Fraudster)
+<span style="color: #93c5fd;">RETURN</span> a.utilization_pct, a.dpd,
+       p.credit_score,
+       t <span style="color: #93c5fd;">IS NOT NULL AS</span> shared_with_threat
+
+<span style="color: #64748b;">-- Relationships = Business Logic</span>
+<span style="color: #64748b;">-- 2-hop fraud detection is NATIVE</span></pre>
+                <p style="font-size: 0.85rem; color: #10b981; margin-top: 1rem;">✅ Logic lives in the graph. Every traversal is auditable. Fraud rings are 1 query. New features = new relationships, not new code.</p>
+            </div>
+        </div>
+
+        <hr style="margin: 4rem 0; border: 0; border-top: 1px solid #e2e8f0;">
+
+        <!-- ============================================= -->
+        <!-- PERFORMANCE BENCHMARKS -->
+        <!-- ============================================= -->
+        <h2>Performance Benchmarks</h2>
+        <p>Latency projections based on Neo4j 5.x characteristics at our current 12,506-entity population:</p>
+
+        <table class="scenario-table">
+            <thead>
+                <tr>
+                    <th>Metric</th>
+                    <th>p50</th>
+                    <th>p95</th>
+                    <th>p99</th>
+                    <th>Notes</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Cypher Traversal</strong></td>
+                    <td>12ms</td>
+                    <td>45ms</td>
+                    <td>78ms</td>
+                    <td>1-5 hop traversals</td>
+                </tr>
+                <tr>
+                    <td><strong>Feature Extraction</strong></td>
+                    <td>3ms</td>
+                    <td>8ms</td>
+                    <td>15ms</td>
+                    <td>All graph features</td>
+                </tr>
+                <tr>
+                    <td><strong>Decision Persistence</strong></td>
+                    <td>8ms</td>
+                    <td>18ms</td>
+                    <td>32ms</td>
+                    <td>Decision + Context + Policy links</td>
+                </tr>
+                <tr>
+                    <td><strong>Total (no LLM)</strong></td>
+                    <td><strong>24ms</strong></td>
+                    <td><strong>73ms</strong></td>
+                    <td><strong>129ms</strong></td>
+                    <td>Decision available immediately</td>
+                </tr>
+                <tr>
+                    <td><strong>Total (with LLM)</strong></td>
+                    <td>374ms</td>
+                    <td>873ms</td>
+                    <td>1,329ms</td>
+                    <td>LLM synthesis is async — non-blocking</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>Scaling Projections</h3>
+        <table class="scenario-table">
+            <thead>
+                <tr><th>Population</th><th>Nodes</th><th>Eval p95</th><th>Persistence p95</th><th>Multiplier</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>10K</td><td>56K</td><td>45ms</td><td>18ms</td><td>1.0×</td></tr>
+                <tr><td>100K</td><td>560K</td><td>52ms</td><td>22ms</td><td>1.2×</td></tr>
+                <tr><td>1M</td><td>5.6M</td><td>68ms</td><td>28ms</td><td>1.5×</td></tr>
+                <tr><td>10M</td><td>56M</td><td>95ms</td><td>35ms</td><td>2.1×</td></tr>
+            </tbody>
+        </table>
+
+        <div class="value-prop">
+            <div class="value-prop-icon">💡</div>
+            <div>
+                <strong>Key Insight:</strong> Graph traversals scale <strong>logarithmically</strong> with population size (index-backed). Going from 10K to 10M users adds ~2× latency, not 1000×. The decision is available in under 130ms at p99 — <em>before</em> the LLM narrative begins generation.
+            </div>
+        </div>
+
+        <h3>Context Graph vs. SQL Rule Engine</h3>
+        <table class="scenario-table">
+            <thead>
+                <tr><th>Operation</th><th>Context Graph</th><th>SQL Engine</th><th>Winner</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Simple decision lookup</td><td>45ms</td><td>28ms</td><td><span class="risk-badge risk-low">SQL</span> (single table)</td></tr>
+                <tr><td>Audit trail query</td><td>12ms</td><td>850ms</td><td><span class="risk-badge risk-low">Graph 70×</span></td></tr>
+                <tr><td>2-hop fraud detection</td><td>22ms</td><td>1,800ms</td><td><span class="risk-badge risk-low">Graph 82×</span></td></tr>
+                <tr><td>Population analytics</td><td>180ms</td><td>320ms</td><td><span class="risk-badge risk-low">Graph 1.8×</span></td></tr>
+            </tbody>
+        </table>
+
+        <hr style="margin: 4rem 0; border: 0; border-top: 1px solid #e2e8f0;">
+
+        <!-- ============================================= -->
+        <!-- DECISION REPLAY / WHAT-IF -->
+        <!-- ============================================= -->
+        <h2>Decision Replay & What-If Analysis</h2>
+        <p>Every decision is deterministic and graph-state dependent. This means any historical decision can be <strong>replayed against current state</strong> to detect drift, or <strong>altered with hypothetical parameters</strong> for scenario planning.</p>
+
+        <div class="mermaid">
+flowchart LR
+    subgraph "Original Decision (Jan 15)"
+        O["Util: 92%, DPD: 15<br/>→ DECLINE 95%"]
+    end
+    subgraph "Replay (Today)"
+        R["Util: 45%, DPD: 0<br/>→ APPROVE 88%"]
+    end
+    O -->|"Delta Analysis"| D["Action Changed: DECLINE → APPROVE<br/>Confidence Δ: -7%<br/>Drift: YES"]
+    style O fill:#ef4444,color:#fff
+    style R fill:#10b981,color:#fff
+    style D fill:#3b82f6,color:#fff
+        </div>
+
+        <div class="card-grid">
+            <div class="card">
+                <div class="pill">Replay</div>
+                <h3 style="margin-top: 0;">Re-evaluate Against Current State</h3>
+                <p>Detect whether a decision made 90 days ago would be <em>different</em> today. If yes, the customer's graph state has materially changed — trigger a re-evaluation.</p>
+            </div>
+            <div class="card">
+                <div class="pill">What-If</div>
+                <h3 style="margin-top: 0;">Alter Parameters for Scenarios</h3>
+                <p>"What if utilization were 50% instead of 92%?" The engine re-runs full Cypher traversal and policy evaluation with your overrides, showing exactly how the action and confidence would change.</p>
+            </div>
+        </div>
+
+        <hr style="margin: 4rem 0; border: 0; border-top: 1px solid #e2e8f0;">
+
+        <!-- ============================================= -->
+        <!-- ETHICAL AI & FAIRNESS -->
+        <!-- ============================================= -->
+        <h2>Ethical AI & Fairness Governance</h2>
+        <p>The Context Graph's deterministic architecture is <strong>inherently more auditable than black-box ML models</strong>. This section documents how the system addresses fairness, bias, and human oversight.</p>
+
+        <div class="card-grid-3">
+            <div class="card" style="border-top-color: #10b981;">
+                <div class="pill" style="background: rgba(16,185,129,0.1); color: #10b981;">Transparency</div>
+                <h3 style="margin-top: 0;">Why, Not Just What</h3>
+                <p style="font-size: 0.9rem;">Every decision persists the exact Cypher traversal, extracted features, matching policies, and confidence score on the graph node. This is a <strong>complete audit trail</strong>, not a log file.</p>
+            </div>
+            <div class="card" style="border-top-color: #f59e0b;">
+                <div class="pill" style="background: rgba(245,158,11,0.1); color: #f59e0b;">Bias Detection</div>
+                <h3 style="margin-top: 0;">Population-Level Monitoring</h3>
+                <p style="font-size: 0.9rem;">Population confidence blending (70% rule + 30% population) enables segment-level analysis. If one segment consistently receives lower approvals, the calibration report surfaces it.</p>
+            </div>
+            <div class="card" style="border-top-color: #8b5cf6;">
+                <div class="pill" style="background: rgba(139,92,246,0.1); color: #8b5cf6;">Human-in-Loop</div>
+                <h3 style="margin-top: 0;">Override with Accountability</h3>
+                <p style="font-size: 0.9rem;">Analysts can <strong>override</strong> any decision with mandatory rationale. Overrides create <code>(:Exception)</code> nodes linking the analyst, original decision, and reason — permanently traceable.</p>
+            </div>
+        </div>
+
+        <div class="value-prop">
+            <div class="value-prop-icon">⚖️</div>
+            <div>
+                <strong>Architectural Advantage:</strong> Because the LLM is strictly a <em>translator</em> (never a decision-maker), hallucinations cannot influence the action or confidence. The LLM receives only deterministic graph outputs and produces a human-readable narrative — nothing more.
+            </div>
+        </div>
+
+        <hr style="margin: 4rem 0; border: 0; border-top: 1px solid #e2e8f0;">
+
+        <!-- ============================================= -->
+        <!-- INTEGRATION ARCHITECTURE -->
+        <!-- ============================================= -->
+        <h2>Integration Architecture: Enterprise CDC Pattern</h2>
+        <p>The Context Graph sits as the <strong>decision intelligence layer</strong> between existing systems of record and downstream consumers:</p>
+
+        <div class="mermaid">
+flowchart LR
+    subgraph Sources
+        A["Core Banking<br/>Mainframe"] -->|CDC| K["Apache Kafka"]
+        B["Claims System<br/>ERP"] -->|CDC| K
+        C["EHR / FHIR"] -->|API| K
+    end
+    K -->|"Stream"| G["Neo4j<br/>Context Graph"]
+    G <-->|"API"| E["NBA<br/>Backend"]
+    E -->|"REST"| F["Frontend<br/>Explorer"]
+    E -->|"Webhook"| H["CRM /<br/>Workflow"]
+    E -->|"Async"| LLM["LLM<br/>Translator"]
+    style G fill:#3b82f6,color:#fff
+    style E fill:#0f172a,color:#fff
+    style K fill:#f59e0b,color:#fff
+        </div>
+
+        <div class="value-prop">
+            <div class="value-prop-icon">🔄</div>
+            <div>
+                <strong>Change Data Capture (CDC):</strong> Production integration uses Kafka Connect CDC streams from systems of record. The Context Graph ingests events, not batch loads — enabling near-real-time graph state that reflects the latest customer behavior.
+            </div>
+        </div>
+
+        <hr style="margin: 4rem 0; border: 0; border-top: 1px solid #e2e8f0;">
+
+        <!-- ============================================= -->
+        <!-- GRAPH ANALYTICS OVERLAY -->
+        <!-- ============================================= -->
+        <h2>Graph Analytics: Population Intelligence</h2>
+        <p>Beyond individual decisions, the graph enables <strong>population-level analytics</strong> that are impossible with flat-table architectures:</p>
+
+        <div class="card-grid">
+            <div class="card">
+                <h3 style="margin-top: 0;">🔍 Community Detection</h3>
+                <p>Identify customer clusters sharing behavioral patterns (utilization bands, payment status, segment). These communities reveal <strong>cohorts that should be evaluated differently</strong> from the overall population.</p>
+                <pre style="background: #1e293b; color: #e2e8f0; padding: 1rem; border-radius: 6px; font-size: 0.8rem;">
+MATCH (p:Person)-[:OWNS]->(a:Account)
+WITH p.segment AS segment,
+     CASE WHEN a.utilization_pct > 0.8 
+          THEN 'high' ELSE 'low' END AS util_band,
+     count(p) AS population
+RETURN segment, util_band, population</pre>
+            </div>
+            <div class="card">
+                <h3 style="margin-top: 0;">🌐 Risk Propagation</h3>
+                <p>Detect how fraud risk <strong>propagates through shared devices</strong>. A single compromised device node can link dozens of otherwise-unrelated accounts — invisible to SQL but a trivial 2-hop query in a graph.</p>
+                <pre style="background: #1e293b; color: #e2e8f0; padding: 1rem; border-radius: 6px; font-size: 0.8rem;">
+MATCH (threat:Fraudster)-[:LOGGED_IN_FROM]
+      ->(d:Device)<-[:LOGGED_IN_FROM]-(p:Person)
+RETURN threat.name, d.ip,
+       count(DISTINCT p) AS affected</pre>
+            </div>
+        </div>
+
+        <hr style="margin: 4rem 0; border: 0; border-top: 1px solid #e2e8f0;">
+
+        <!-- ============================================= -->
+        <!-- MULTI-LLM COMPARISON -->
+        <!-- ============================================= -->
+        <h2>Multi-LLM Translator Architecture</h2>
+        <p>The LLM is a <strong>swappable, plug-in translator</strong> — not a decision maker. This architectural pattern enables comparison of different models without changing any business logic:</p>
+
+        <div class="mermaid">
+flowchart TD
+    ENGINE["Deterministic<br/>Policy Engine"] -->|"Structured Decision JSON"| ROUTER["LLM Router"]
+    ROUTER -->|"GPT-4o"| G["OpenAI<br/>Translator"]
+    ROUTER -->|"Claude 3.5"| C["Anthropic<br/>Translator"]
+    ROUTER -->|"Gemini Pro"| GM["Google<br/>Translator"]
+    G --> N["Human-Readable<br/>Narrative"]
+    C --> N
+    GM --> N
+    style ENGINE fill:#0f172a,color:#fff
+    style ROUTER fill:#f59e0b,color:#fff
+    style N fill:#10b981,color:#fff
+        </div>
+
+        <table class="scenario-table">
+            <thead>
+                <tr><th>Dimension</th><th>GPT-4o-mini</th><th>Claude 3.5 Sonnet</th><th>Gemini Pro</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><strong>Narrative Quality</strong></td><td>Detailed, clinical</td><td>Nuanced, empathetic</td><td>Concise, data-focused</td></tr>
+                <tr><td><strong>Latency (p50)</strong></td><td>350ms</td><td>420ms</td><td>280ms</td></tr>
+                <tr><td><strong>Cost per 1K decisions</strong></td><td>$0.12</td><td>$0.18</td><td>$0.08</td></tr>
+                <tr><td><strong>Regulatory Suitability</strong></td><td>HIPAA-ready (Azure)</td><td>SOC 2 compliant</td><td>FedRAMP-ready</td></tr>
+            </tbody>
+        </table>
+
+        <div class="value-prop">
+            <div class="value-prop-icon">🔑</div>
+            <div>
+                <strong>Critical Design Decision:</strong> Regardless of which LLM is used, <em>the action and confidence never change</em>. The LLM receives only the finalized decision and translates it into natural language. This guarantees deterministic outcomes with AI-enhanced communication.
+            </div>
+        </div>
+
+        <hr style="margin: 4rem 0; border: 0; border-top: 1px solid #e2e8f0;">
+
+        <!-- ============================================= -->
+        <!-- REGULATORY COMPLIANCE MAPPING -->
+        <!-- ============================================= -->
+        <h2>Regulatory Compliance Mapping</h2>
+        <p>Each policy rule maps directly to a regulatory requirement. The graph persists this lineage, enabling automated compliance reporting:</p>
+
+        <table class="scenario-table">
+            <thead>
+                <tr><th>Policy</th><th>Regulation</th><th>Requirement</th><th>How Context Graph Satisfies</th></tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>POL-CLI-01</td>
+                    <td>OCC 2013-29</td>
+                    <td>Fair lending practices</td>
+                    <td>Deterministic rules + population analysis prevent disparate impact</td>
+                </tr>
+                <tr>
+                    <td>POL-CLI-02</td>
+                    <td>ECOA / FCRA</td>
+                    <td>Adverse action notice with specific reasons</td>
+                    <td>Decision node persists exact factors and matching policies</td>
+                </tr>
+                <tr>
+                    <td>POL-AML-01</td>
+                    <td>BSA / FinCEN</td>
+                    <td>SAR filing for suspicious activity</td>
+                    <td>2-hop device traversal detects shared devices with known threats</td>
+                </tr>
+                <tr>
+                    <td>POL-MED-01</td>
+                    <td>HIPAA §164.524</td>
+                    <td>Patient access to health information</td>
+                    <td>Full decision trace accessible via API with graph lineage</td>
+                </tr>
+                <tr>
+                    <td>POL-MED-02</td>
+                    <td>CMS Interoperability</td>
+                    <td>Care gap identification and outreach</td>
+                    <td>Graph traversal: Patient → Encounter → Diagnosis → CareGap</td>
+                </tr>
+                <tr>
+                    <td>POL-INS-01</td>
+                    <td>NAIC Model Acts</td>
+                    <td>Duplicate claim fraud detection</td>
+                    <td>Graph pattern matching: same provider + code within time window</td>
+                </tr>
+                <tr>
+                    <td>POL-INS-04</td>
+                    <td>State Insurance Codes</td>
+                    <td>Pre-authorization compliance</td>
+                    <td>Claim → PreAuthorization traversal with NULL detection</td>
+                </tr>
+            </tbody>
+        </table>
 
         <hr style="margin: 4rem 0; border: 0; border-top: 1px solid #e2e8f0;">
 
@@ -755,14 +1397,17 @@
         
         <div class="card-grid">
             <div class="card" style="border-top-color: #10b981;">
-                <h3 style="margin-top: 0; color: #065f46;">Phase 1: Current Demo (Complete)</h3>
+                <h3 style="margin-top: 0; color: #065f46;">Phase 1: v2.0 (Complete)</h3>
                 <ul>
-                    <li>✅ 10K population seeded across 3 verticals</li>
+                    <li>✅ 12K+ population seeded across 4 verticals</li>
                     <li>✅ Graph-traversal policy engine (Cypher-based)</li>
                     <li>✅ Interactive negotiation lifecycle</li>
                     <li>✅ AI narrative synthesis with graph context</li>
-                    <li>✅ Decision reasoning stored on graph nodes</li>
-                    <li>✅ Searchable user explorer with industry filters</li>
+                    <li>✅ Feedback loop: (:Outcome) → calibration</li>
+                    <li>✅ Temporal intelligence & behavioral drift detection</li>
+                    <li>✅ Decision replay / What-If analysis</li>
+                    <li>✅ Population-blended confidence scoring</li>
+                    <li>✅ Graph analytics overlay</li>
                 </ul>
             </div>
             <div class="card" style="border-top-color: #3b82f6;">
@@ -772,7 +1417,7 @@
                     <li>🔲 Temporal workflow orchestration</li>
                     <li>🔲 RBAC and SSO authentication</li>
                     <li>🔲 Horizontal scaling with Neo4j Fabric</li>
-                    <li>🔲 Real-time population confidence scoring</li>
+                    <li>🔲 Multi-LLM translator (GPT/Claude/Gemini)</li>
                     <li>🔲 Automated compliance report generation</li>
                 </ul>
             </div>

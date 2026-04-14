@@ -2,8 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-
-const API_URL = "http://localhost:8001";
+import { API_URL } from "@/lib/config";
 
 interface Decision {
   decision_id: string;
@@ -64,7 +63,7 @@ export default function DecisionsPage() {
   }
 
   return (
-    <div className="animate-fade-in">
+    <div className="animate-fade-in p-8 h-full overflow-auto">
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-2xl font-bold text-white mb-1">Decision History</h1>

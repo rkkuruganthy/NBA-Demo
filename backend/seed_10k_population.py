@@ -431,9 +431,82 @@ def seed_all():
             CREATE (rx:Prescription {id: 'MED-H-RX', medication: 'Lisinopril 10mg', status: 'Fulfilled'})
             CREATE (diag)-[:TREATMENT_PLAN]->(rx)
         """)
+        """)
+
+        # E-Commerce Sad Path (High Intent Abandonment)
+        session.run("""
+            CREATE (dev:Device {id: 'DEV-ECOM-SAD', ip: '192.168.1.10', type: 'Mobile'})
+            CREATE (sess:Session {id: 'SESS-ECOM-SAD', is_authenticated: false})
+            CREATE (p:Person {id: 'CUST-ECOM-SAD', name: 'John Doe', segment: 'Mass Market'})
+            CREATE (dev)-[:INITIATED]->(sess)
+            CREATE (v1:BrowsedVehicle {vin: 'VIN-SAD-01', make: 'Sedan', price: 28000, model_year: 2026})
+            CREATE (sess)-[:VIEWED]->(v1)
+            CREATE (sess)-[:VIEWED]->(v1)
+            CREATE (sess)-[:VIEWED]->(v1)
+            CREATE (sess)-[:VIEWED]->(v1)
+            CREATE (calc:FinancingCalculator {id: 'CALC-SAD-01', term_months: 72, estimated_apr: 4.5})
+            CREATE (sess)-[:ENGAGED_WITH]->(calc)
+            // No outcome yet, represents abandonment
+        """)
+
+        # E-Commerce Happy Path (Low Intent)
+        session.run("""
+            CREATE (dev:Device {id: 'DEV-ECOM-HAPPY', ip: '10.0.5.22', type: 'Desktop'})
+            CREATE (sess:Session {id: 'SESS-ECOM-HAPPY', is_authenticated: false})
+            CREATE (p:Person {id: 'CUST-ECOM-HAPPY', name: 'Jane Smith', segment: 'Affluent'})
+            CREATE (dev)-[:INITIATED]->(sess)
+            CREATE (v1:BrowsedVehicle {vin: 'VIN-HAPPY-01', make: 'Luxury SUV', price: 75000, model_year: 2026})
+            CREATE (sess)-[:VIEWED]->(v1)
+        """)
 
         # ============================================
-        # PHASE 5: POLICIES
+        # PHASE 5: E-COMMERCE USERS (2,000)
+        # ============================================
+        print("Seeding E-Commerce visitors (2,000)...")
+        ecom_users = []
+        for i in range(1, 2001):
+            views = random.choice([1, 1, 2, 3, 4, 5, 6])
+            engaged_calc = random.random() < (0.2 * views)
+            make = random.choice(['Sedan', 'SUV', 'Truck', 'Coupe'])
+            price = random.randint(22000, 85000)
+            ecom_users.append({
+                "pid": rand_id("ECOM", i),
+                "dev_id": rand_id("EDEV", i),
+                "sess_id": rand_id("ESESS", i),
+                "vin": rand_id("EVIN", i),
+                "make": make,
+                "price": price,
+                "views": views,
+                "engaged_calc": engaged_calc,
+                "term": random.choice([36, 48, 60, 72]) if engaged_calc else None
+            })
+        
+        for start in range(0, len(ecom_users), BATCH):
+            batch = ecom_users[start:start + BATCH]
+            session.run("""
+                UNWIND $batch AS u
+                CREATE (p:Person {id: u.pid, name: 'Anonymous', segment: 'Unknown'})
+                CREATE (dev:Device {id: u.dev_id, type: 'Mobile'})
+                CREATE (sess:Session {id: u.sess_id, is_authenticated: false})
+                CREATE (dev)-[:INITIATED]->(sess)
+                CREATE (v:BrowsedVehicle {vin: u.vin, make: u.make, price: u.price, model_year: 2026})
+                WITH u, sess, v
+                UNWIND range(1, u.views) AS view_idx
+                CREATE (sess)-[:VIEWED]->(v)
+            """, {"batch": batch})
+            
+            calc_batch = [u for u in batch if u["engaged_calc"]]
+            if calc_batch:
+                session.run("""
+                    UNWIND $batch AS u
+                    MATCH (sess:Session {id: u.sess_id})
+                    CREATE (calc:FinancingCalculator {id: u.sess_id + '-CALC', term_months: u.term, estimated_apr: 4.5})
+                    CREATE (sess)-[:ENGAGED_WITH]->(calc)
+                """, {"batch": calc_batch})
+            print(f"  E-commerce batch {start}-{start+len(batch)} created")
+
+        # ============================================
+        # PHASE 6: POLICIES
         # ============================================
         print("Seeding policies...")
         session.run("""
@@ -446,6 +519,7 @@ def seed_all():
             CREATE (:Policy {id: 'POL-MED-01', name: 'High-Risk Med Non-Adherence', description: 'Trigger Clinical Intervention if care gap > 7 days for critical diagnosis.', family: 'Clinical'})
             CREATE (:Policy {id: 'POL-MED-02', name: 'Chronic Condition Monitoring', description: 'Schedule follow-up if chronic condition with care gap 3-7 days.', family: 'Clinical'})
             CREATE (:Policy {id: 'POL-MED-03', name: 'Compliant Patient Clearance', description: 'Clear patient if prescriptions fulfilled and no care gaps.', family: 'Clinical'})
+            CREATE (:Policy {id: 'POL-MAR-01', name: 'High-Intent Financed Abandonment', description: 'Trigger proactive SMS rate lock if user views vehicle 4+ times and checks 72-month financing.', family: 'MarTech'})
         """)
 
         # Verify counts

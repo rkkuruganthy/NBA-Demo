@@ -5,7 +5,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 # Initialize OpenAI Client
-API_KEY = os.getenv("OPENAI_API_KEY", "sk-v_9i6LvVMw3mCEK58vwMwzDBGkkVFMlNDqyYxcS5NzT3BlbkFJk1tLDbaxGXZLJbwqUlM9Hl493BxccP7dy8TcrRhWYA")
+API_KEY = os.getenv("OPENAI_API_KEY")
 
 try:
     client = OpenAI(api_key=API_KEY)

@@ -31,7 +31,7 @@ def find_precedents(
             MATCH (d:Decision)-[:ABOUT]->(p:Person)
             MATCH (d)-[:ABOUT]->(a:Account)
             MATCH (d)-[:HAS_CONTEXT]->(dc:DecisionContext)
-            WHERE d.status = 'COMPLETED'
+            WHERE d.status IN ['COMPLETED', 'PENDING', 'CLOSED']
 
             // Compute similarity components
             WITH d, p, a, dc,

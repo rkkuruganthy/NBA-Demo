@@ -32,6 +32,28 @@ FOR (esc:Escalation) REQUIRE esc.id IS UNIQUE;
 CREATE CONSTRAINT community_id IF NOT EXISTS
 FOR (c:Community) REQUIRE c.id IS UNIQUE;
 
+// --- Outcome & Feedback Loop ---
+
+CREATE CONSTRAINT outcome_id IF NOT EXISTS
+FOR (o:Outcome) REQUIRE o.id IS UNIQUE;
+
+// --- Insurance Vertical ---
+
+CREATE CONSTRAINT insurance_policy_id IF NOT EXISTS
+FOR (ip:InsurancePolicy) REQUIRE ip.id IS UNIQUE;
+
+CREATE CONSTRAINT claim_id IF NOT EXISTS
+FOR (cl:Claim) REQUIRE cl.id IS UNIQUE;
+
+CREATE CONSTRAINT provider_id IF NOT EXISTS
+FOR (pr:Provider) REQUIRE pr.id IS UNIQUE;
+
+CREATE CONSTRAINT diagnosis_code_id IF NOT EXISTS
+FOR (dc:DiagnosisCode) REQUIRE dc.code IS UNIQUE;
+
+CREATE CONSTRAINT preauth_id IF NOT EXISTS
+FOR (pa:PreAuthorization) REQUIRE pa.id IS UNIQUE;
+
 // --- Indexes for query performance ---
 
 CREATE INDEX person_segment IF NOT EXISTS
@@ -57,3 +79,48 @@ FOR (pol:Policy) ON (pol.family);
 
 CREATE INDEX escalation_status IF NOT EXISTS
 FOR (esc:Escalation) ON (esc.status);
+
+// --- Insurance Indexes ---
+
+CREATE INDEX claim_amount IF NOT EXISTS
+FOR (cl:Claim) ON (cl.amount);
+
+CREATE INDEX claim_submitted IF NOT EXISTS
+FOR (cl:Claim) ON (cl.submitted_at);
+
+CREATE INDEX provider_risk IF NOT EXISTS
+FOR (pr:Provider) ON (pr.risk_score);
+
+CREATE INDEX provider_network IF NOT EXISTS
+FOR (pr:Provider) ON (pr.is_in_network);
+
+// --- Outcome Indexes ---
+
+CREATE INDEX outcome_result IF NOT EXISTS
+FOR (o:Outcome) ON (o.actual_result);
+
+CREATE INDEX outcome_recorded IF NOT EXISTS
+FOR (o:Outcome) ON (o.recorded_at);
+
+// --- E-Commerce Vertical ---
+
+CREATE CONSTRAINT session_id IF NOT EXISTS
+FOR (s:Session) REQUIRE s.id IS UNIQUE;
+
+CREATE CONSTRAINT device_id IF NOT EXISTS
+FOR (d:Device) REQUIRE d.id IS UNIQUE;
+
+CREATE INDEX browsed_vehicle_vin IF NOT EXISTS
+FOR (bv:BrowsedVehicle) ON (bv.vin);
+
+CREATE CONSTRAINT calc_id IF NOT EXISTS
+FOR (fc:FinancingCalculator) REQUIRE fc.id IS UNIQUE;
+
+CREATE CONSTRAINT dealership_id IF NOT EXISTS
+FOR (d:Dealership) REQUIRE d.id IS UNIQUE;
+
+CREATE INDEX owned_vehicle_vin IF NOT EXISTS
+FOR (ov:OwnedVehicle) ON (ov.vin);
+
+CREATE INDEX valuation_amount IF NOT EXISTS
+FOR (val:Valuation) ON (val.amount);

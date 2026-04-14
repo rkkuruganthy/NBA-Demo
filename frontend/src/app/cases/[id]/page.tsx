@@ -3,8 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-
-const API_URL = "http://localhost:8001";
+import { API_URL } from "@/lib/config";
 
 interface AppliedPolicy {
   policy_id: string;
@@ -121,11 +120,11 @@ export default function CaseDetailPage() {
 
   const actionConfig = getActionConfig(decision.recommended_action || (decision as any).action);
   const factors = (decision.explanation_inputs as { factors?: string[] })?.factors || [];
-  const policies = decision.applied_policies || (decision as any).policies || [];
-  const precedents = decision.precedent_cases || (decision as any).precedents || [];
+  const policies = (decision.applied_policies || (decision as any).policies || []) as any[];
+  const precedents = (decision.precedent_cases || (decision as any).precedents || []) as any[];
 
   return (
-    <div className="animate-fade-in max-w-6xl">
+    <div className="animate-fade-in max-w-6xl p-8 h-full overflow-auto">
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div>

@@ -114,6 +114,53 @@ def seed_showcase_graphs():
         """
         session.run(med_cypher)
 
+        print("Seeding Showcase Graph 4: Auto E-Commerce (MarTech)")
+        ecom_cypher = """
+        // 1. E-Commerce Anonymous Browser (Sad Path - High Intent)
+        CREATE (dev1:Device {id: 'DEV-ECOM-SAD', ip: '192.168.1.10', type: 'Mobile', last_seen: datetime()})
+        CREATE (sess1:Session {id: 'SESS-ECOM-SAD', is_authenticated: false})
+        CREATE (p1:Person {id: 'CUST-ECOM-SAD', name: 'Anonymous', segment: 'Mass Market'})
+        CREATE (dev1)-[:INITIATED]->(sess1)
+        CREATE (p1)-[:LOGGED_IN_FROM]->(dev1)
+        CREATE (v1:BrowsedVehicle {vin: 'VIN-SAD-01', make: 'Sedan', price: 28000, model_year: 2026})
+        CREATE (sess1)-[:VIEWED {timestamp: datetime()}]->(v1)
+        CREATE (sess1)-[:VIEWED {timestamp: datetime()}]->(v1)
+        CREATE (sess1)-[:VIEWED {timestamp: datetime()}]->(v1)
+        CREATE (sess1)-[:VIEWED {timestamp: datetime()}]->(v1)
+        CREATE (calc:FinancingCalculator {id: 'CALC-SAD-01', term_months: 72, estimated_apr: 4.5})
+        CREATE (sess1)-[:ENGAGED_WITH]->(calc)
+        
+        // COMPLEX VECTORS FOR CUST-ECOM-SAD
+        // Vector 1: Trade-in Equity (Capability)
+        CREATE (old_car:OwnedVehicle {vin: 'VIN-OLD-99', make: 'Compact', model_year: 2018})
+        CREATE (val:Valuation {amount: 6500, source: 'KBB', date: datetime()})
+        CREATE (p1)-[:OWNS]->(old_car)
+        CREATE (old_car)-[:VALUED_AT]->(val)
+        
+        // Vector 2: Dynamic Supply / Scarcity (FOMO)
+        CREATE (dealership:Dealership {id: 'DLR-01', name: 'Downtown Auto Mall', zipcode: '78701'})
+        CREATE (v1)-[:LOCATED_AT {stock: 2}]->(dealership)
+        
+        // Vector 3: Omnichannel Attribution (Physical bridging)
+        CREATE (visit:PhysicalVisit {date: 'Yesterday', duration_minutes: 45})
+        CREATE (p1)-[:TOOK_TEST_DRIVE]->(visit)
+        CREATE (visit)-[:TESTED]->(v1)
+
+        // 2. E-Commerce Buyer (Happy Path - Converted Sale)
+        CREATE (dev2:Device {id: 'DEV-ECOM-HAPPY', ip: '10.0.5.22', type: 'Desktop', last_seen: datetime()})
+        CREATE (sess2:Session {id: 'SESS-ECOM-HAPPY', is_authenticated: false})
+        CREATE (p2:Person {id: 'CUST-ECOM-HAPPY', name: 'Anonymous', segment: 'Affluent'})
+        CREATE (p2)-[:LOGGED_IN_FROM]->(dev2)
+        CREATE (dev2)-[:INITIATED]->(sess2)
+        CREATE (v2:BrowsedVehicle {vin: 'VIN-HAPPY-01', make: 'Luxury SUV', price: 75000, model_year: 2026})
+        CREATE (sess2)-[:VIEWED {timestamp: datetime()}]->(v2)
+        CREATE (sess2)-[:PURCHASED {amount: 75000, method: 'Cash', date: datetime()}]->(v2)
+        
+        // Vector 4: Collaborative Filtering (Lookalikes)
+        CREATE (p1)-[:LOOKALIKE_OF {score: 0.92}]->(p2)
+        """
+        session.run(ecom_cypher)
+
         print("Seeding Multi-Industry Policies...")
         policy_cypher = """
         // Financial Policies
@@ -126,6 +173,12 @@ def seed_showcase_graphs():
         
         // Healthcare Policies
         CREATE (:Policy {id: 'POL-MED-01', name: 'High-Risk Med Non-Adherence', description: 'Trigger Clinical Intervention if Heart Failure medication gap > 7 days.', family: 'Clinical'})
+
+        // MarTech E-Commerce Policies
+        CREATE (:Policy {id: 'POL-MAR-01', name: 'High-Intent Financed Abandonment', description: 'Trigger proactive SMS rate lock if user views vehicle 4+ times and checks 72-month financing.', family: 'MarTech'})
+        CREATE (:Policy {id: 'POL-MAR-02', name: 'Trade-In Equity Leverage', description: 'Trigger positive equity voucher if Valuation > $5k and user is abandoning.', family: 'MarTech'})
+        CREATE (:Policy {id: 'POL-MAR-03', name: 'Dynamic Scarcity Alert', description: 'Trigger urgency notification if local dealership stock is < 3.', family: 'MarTech'})
+        CREATE (:Policy {id: 'POL-MAR-04', name: 'Omnichannel Accelerator', description: 'Provide VIP showroom invite if user test-drove recently but did not purchase.', family: 'MarTech'})
         """
         session.run(policy_cypher)
 

@@ -1,5 +1,5 @@
 """
-Decisions API router — traces, precedents, and analyst actions.
+Decisions API router — traces, precedents, analyst actions, and feedback loop.
 """
 
 from fastapi import APIRouter, HTTPException
@@ -7,6 +7,11 @@ from pydantic import BaseModel, Field
 from typing import Optional
 from app.services.precedent_service import get_decision_trace, find_precedents
 from app.services.decision_service import get_decision
+from app.services.outcome_service import (
+    record_outcome as record_outcome_service,
+    get_calibration_metrics,
+    get_policy_effectiveness,
+)
 from app.db import execute_write, execute_query
 import uuid
 from datetime import datetime
@@ -38,6 +43,8 @@ class OutcomeRequest(BaseModel):
     actual_result: str = Field(..., examples=["POSITIVE", "NEGATIVE", "NEUTRAL"])
     revenue_impact: Optional[float] = None
     customer_retained: Optional[bool] = None
+    days_to_outcome: Optional[int] = Field(None, description="Days between decision and outcome")
+    outcome_category: Optional[str] = Field(None, examples=["DEFAULT", "RESOLVED", "FRAUD_CONFIRMED", "READMISSION"])
     notes: Optional[str] = None
 
 
@@ -153,23 +160,43 @@ async def escalate_decision(decision_id: str, request: EscalationRequest):
 
 @router.post("/{decision_id}/outcome")
 async def record_outcome(decision_id: str, request: OutcomeRequest):
-    """Record the actual business outcome for a decision."""
-    execute_write("""
-        MATCH (d:Decision {id: $id})
-        SET d.outcome = $result,
-            d.revenue_impact = $revenue,
-            d.customer_retained = $retained,
-            d.outcome_notes = $notes,
-            d.outcome_recorded_at = datetime($now)
-    """, {
-        "id": decision_id,
-        "result": request.actual_result,
-        "revenue": request.revenue_impact,
-        "retained": request.customer_retained,
-        "notes": request.notes or "",
-        "now": datetime.utcnow().isoformat(),
-    })
-    return {"status": "outcome_recorded", "decision_id": decision_id}
+    """
+    Record the actual business outcome for a decision.
+    Creates an (:Outcome) node linked via [:RESULTED_IN] to the (:Decision).
+    This closes the feedback loop for calibration and policy effectiveness tracking.
+    """
+    decision = get_decision(decision_id)
+    if not decision:
+        raise HTTPException(status_code=404, detail=f"Decision {decision_id} not found")
+
+    result = record_outcome_service(
+        decision_id=decision_id,
+        actual_result=request.actual_result,
+        revenue_impact=request.revenue_impact,
+        customer_retained=request.customer_retained,
+        days_to_outcome=request.days_to_outcome,
+        outcome_category=request.outcome_category,
+        notes=request.notes,
+    )
+    return result
+
+
+@router.get("/calibration/report")
+async def calibration_report(trigger_event: str = None):
+    """
+    Get calibration metrics: predicted confidence vs actual outcomes.
+    Shows accuracy, overconfidence rate, and underconfidence rate.
+    """
+    return get_calibration_metrics(trigger_event=trigger_event)
+
+
+@router.get("/calibration/policy-effectiveness")
+async def policy_effectiveness():
+    """
+    Measure which policies lead to positive vs negative outcomes.
+    Enables data-driven policy refinement.
+    """
+    return get_policy_effectiveness()
 
 
 @router.get("/")
@@ -179,8 +206,10 @@ async def list_decisions(limit: int = 20):
         MATCH (d:Decision)
         OPTIONAL MATCH (d)-[:ABOUT]->(p:Person)
         OPTIONAL MATCH (d)-[:HAS_CONTEXT]->(dc:DecisionContext)
+        OPTIONAL MATCH (d)-[:RESULTED_IN]->(o:Outcome)
         RETURN d, p.name as customer_name, p.id as customer_id,
-               dc.trigger_event as trigger_event
+               dc.trigger_event as trigger_event,
+               o.actual_result as outcome
         ORDER BY d.created_at DESC
         LIMIT $limit
     """, {"limit": limit})
@@ -194,7 +223,10 @@ async def list_decisions(limit: int = 20):
             "confidence": dict(r["d"]).get("confidence"),
             "status": dict(r["d"]).get("status"),
             "trigger_event": r.get("trigger_event"),
+            "outcome": r.get("outcome"),
             "created_at": str(dict(r["d"]).get("created_at", "")),
         }
         for r in results
     ]
+
+
