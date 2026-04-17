@@ -11,7 +11,9 @@ import {
   ShieldCheck, 
   ScrollText, 
   Network,
-  Activity
+  Activity,
+  BarChart2,
+  GitBranch
 } from "lucide-react";
 
 const navigation = [
@@ -29,6 +31,11 @@ const navigation = [
     name: "Decisions",
     href: "/decisions",
     icon: <ShieldCheck className="w-5 h-5" />,
+  },
+  {
+    name: "Calibration",
+    href: "/decisions/calibration",
+    icon: <BarChart2 className="w-5 h-5" />,
   },
   {
     name: "Policies",

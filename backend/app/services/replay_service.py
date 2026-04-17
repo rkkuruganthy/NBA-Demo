@@ -10,6 +10,7 @@ from app.services.policy_engine import (
     extract_aml_features,
     extract_healthcare_features,
     extract_insurance_features,
+    extract_ecommerce_features,
     evaluate_case,
 )
 from app.models.case import TriggerEvent
@@ -56,6 +57,15 @@ def replay_decision(decision_id: str) -> dict:
         current_features = extract_healthcare_features(customer_id)
     elif "CLAIMS" in trigger_event:
         current_features = extract_insurance_features(customer_id)
+    elif "ABANDONED_SESSION" in trigger_event:
+        # For e-commerce, the session_id is stored in the DecisionContext
+        # Fall back to customer_id if session_id unavailable
+        session_result = execute_query("""
+            MATCH (d:Decision {id: $id})-[:HAS_CONTEXT]->(dc:DecisionContext)
+            RETURN dc.session_id AS session_id
+        """, {"id": decision_id})
+        session_id = session_result[0]["session_id"] if session_result and session_result[0].get("session_id") else customer_id
+        current_features = extract_ecommerce_features(session_id)
     else:
         current_features = {}
 
