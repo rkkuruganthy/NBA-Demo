@@ -431,7 +431,6 @@ def seed_all():
             CREATE (rx:Prescription {id: 'MED-H-RX', medication: 'Lisinopril 10mg', status: 'Fulfilled'})
             CREATE (diag)-[:TREATMENT_PLAN]->(rx)
         """)
-        """)
 
         # E-Commerce Sad Path (High Intent Abandonment)
         session.run("""
