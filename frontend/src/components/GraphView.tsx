@@ -38,6 +38,9 @@ export default function GraphView({
   const [NvlComponent, setNvlComponent] = useState<any>(null);
   const [isReady, setIsReady] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const [tooltip, setTooltip] = useState<{ x: number, y: number, content: string, label: string, properties: any, visible: boolean }>({
+    x: 0, y: 0, content: "", label: "", properties: null, visible: false
+  });
 
   // Dynamic import of NVL to avoid SSR issues
   useEffect(() => {
@@ -143,11 +146,66 @@ export default function GraphView({
     );
   }
 
+
+
   return (
-    <div className="w-full h-full relative" ref={containerRef}>
+    <div 
+      className="w-full h-full relative overflow-hidden" 
+      ref={containerRef}
+    >
+      {/* Tooltip */}
+      {tooltip.visible && (
+        <div 
+          className="fixed z-[9999] pointer-events-none px-3 py-2 bg-gray-950/95 border border-indigo-500/50 rounded-xl shadow-[0_0_30px_rgba(79,70,229,0.3)] backdrop-blur-xl animate-in fade-in zoom-in duration-200 min-w-[220px]"
+          style={{ 
+            left: tooltip.x + 20, 
+            top: tooltip.y + 20,
+            transform: 'translate3d(0, 0, 0)' // Force hardware acceleration
+          }}
+        >
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center justify-between border-b border-gray-800/50 pb-1.5 mb-0.5">
+              <span className="text-[9px] text-indigo-400 uppercase tracking-widest font-black">
+                {tooltip.label}
+              </span>
+              <span className="text-[9px] text-gray-600 font-mono">{String(tooltip.properties?.id || '').substring(0, 8)}</span>
+            </div>
+            
+            <span className="text-sm text-white font-bold leading-tight">
+              {tooltip.content}
+            </span>
+
+            {/* Properties List */}
+            {tooltip.properties && (
+              <div className="flex flex-col gap-1 mt-1">
+                {Object.entries(tooltip.properties).map(([key, value]) => {
+                  if (['id', 'name', 'reasoning', 'graph_features', 'ranked_actions', 'applied_policies', 'precedent_cases'].includes(key)) return null;
+                  if (key.includes('date') || key.includes('timestamp')) return null;
+                  return (
+                    <div key={key} className="flex items-center justify-between bg-white/5 px-1.5 py-0.5 rounded text-[10px]">
+                      <span className="text-gray-500 lowercase">{key.replace(/_/g, ' ')}:</span>
+                      <span className="text-indigo-200 font-mono ml-3">
+                        {typeof value === 'number' ? (key.includes('score') || key === 'confidence' ? `${(value * 100).toFixed(0)}%` : value) : String(value)}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+            
+            <div className="flex items-center gap-1.5 mt-1 border-t border-gray-800/50 pt-1.5">
+              <div className="w-1 h-1 rounded-full bg-indigo-500 animate-pulse" />
+              <span className="text-[8px] text-gray-500 uppercase tracking-tighter">
+                Click node to lock properties in side panel
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="absolute top-4 left-4 z-10 flex gap-2">
          {/* Graph Legend */}
-         <div className="glass-card px-3 py-2 text-[10px] flex items-center gap-3 bg-gray-900/80 mt-0 flex-wrap max-w-xl">
+         <div className="glass-card px-3 py-2 text-[10px] flex items-center gap-3 bg-gray-900/80 mt-0 flex-wrap max-w-xl border border-gray-800/50">
            {[
               {label: "Person/Patient", color: "bg-indigo-400"},
               {label: "Account", color: "bg-emerald-400"},
@@ -188,9 +246,30 @@ export default function GraphView({
                 if (originalNode) onNodeClick(originalNode);
               }
             },
-            onZoom: isReady,
-            onPan: isReady,
-            onDrag: isReady,
+            onHover: (element: any, _hitTargets: any, event: MouseEvent) => {
+              // element is the NVL render object (id, caption, color…) — no labels property.
+              // Match against our original data to get labels + properties.
+              if (element && data) {
+                const originalNode = data.nodes.find((n: any) => n.id === element.id);
+                if (originalNode) {
+                  setTooltip({
+                    x: event.clientX,
+                    y: event.clientY,
+                    label: originalNode.labels?.[1] || originalNode.labels?.[0] || "Node",
+                    content: originalNode.properties?.name || originalNode.properties?.action || originalNode.id,
+                    properties: originalNode.properties,
+                    visible: true,
+                  });
+                  return;
+                }
+              }
+              // No node under cursor (empty canvas or relationship) — hide tooltip
+              setTooltip(prev => ({ ...prev, visible: false }));
+            },
+            // Force these to true to ensure graph is NEVER locked
+            onZoom: true,
+            onPan: true,
+            onDrag: true,
           }}
         />
       </div>

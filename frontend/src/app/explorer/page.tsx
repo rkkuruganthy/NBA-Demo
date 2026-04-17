@@ -156,7 +156,7 @@ export default function ExplorerPage() {
       });
       const result = await res.json();
       
-      setTimeout(() => {
+      setTimeout(async () => {
         setLogs(prev => [...prev, {
           id: `sys-${Date.now()}`,
           role: "agent",
@@ -169,7 +169,17 @@ export default function ExplorerPage() {
         // Set active decision for negotiation
         setActiveDecision(result);
         setIsEvaluating(false);
-        loadGraph(activeCustomer);
+        
+        // Load graph and auto-select the decision node
+        const resGraph = await fetch(`${API_URL}/explorer/customer/${activeCustomer}`);
+        const graphData = await resGraph.json();
+        setGraphData(graphData);
+        
+        // Find and select the specific decision node
+        if (result.decision_id && graphData.nodes) {
+          const decNode = graphData.nodes.find((n: any) => n.id === result.decision_id);
+          if (decNode) setSelectedNode(decNode);
+        }
       }, 600);
       
     } catch (e) {
@@ -474,6 +484,65 @@ export default function ExplorerPage() {
               </div>
             )}
             <div ref={logEndRef} />
+            
+            {/* Recommendation Highlight / Next Best Action Card */}
+            {activeDecision && !isEvaluating && (
+              <div className="mt-6 mb-2 animate-in slide-in-from-bottom-4 duration-500">
+                <div className="bg-indigo-600/5 border border-indigo-500/30 rounded-xl overflow-hidden shadow-2xl shadow-indigo-500/10">
+                  <div className="bg-indigo-600 px-3 py-1.5 flex items-center justify-between">
+                    <span className="text-[10px] font-bold text-white uppercase tracking-widest flex items-center gap-1.5">
+                      <BrainCircuit className="w-3.5 h-3.5" />
+                      Next Best Action
+                    </span>
+                    <span className="bg-white/20 text-white text-[10px] px-2 py-0.5 rounded-full font-bold">
+                      {((activeDecision.confidence || 0) * 100).toFixed(0)}% Confidence
+                    </span>
+                  </div>
+                  <div className="p-4 bg-gray-900/40 backdrop-blur-sm">
+                    <h3 className="text-lg font-bold text-white mb-2 flex items-center gap-2">
+                       {activeDecision.recommended_action === 'OFFER_SMS' ? '📱 Send Conversion SMS' :
+                        activeDecision.recommended_action === 'DEALER_CONCIERGE_CALL' ? '📞 Dealer Concierge Call' :
+                        activeDecision.recommended_action === 'OFFER_TRADE_IN' ? '💰 Equity Trade-In Offer' :
+                        activeDecision.recommended_action}
+                    </h3>
+                    <p className="text-indigo-200/80 text-xs leading-relaxed mb-4 italic">
+                      "{(activeDecision.ranked_actions?.[0]?.description || activeDecision.ai_narrative?.split('.')[0] + '.')} "
+                    </p>
+                    
+                    <div className="flex items-center gap-4 py-3 border-y border-indigo-500/10 mb-4">
+                      <div className="flex flex-col">
+                        <span className="text-[9px] text-gray-500 uppercase font-bold">Priority</span>
+                        <span className="text-xs text-white uppercase">
+                          {activeDecision.applied_policies?.[0]?.policy_name || 
+                           activeDecision.applied_policies?.[0]?.policy_id || 
+                           'High'}
+                        </span>
+                      </div>
+                      <div className="w-px h-8 bg-gray-800" />
+                      <div className="flex flex-col">
+                        <span className="text-[9px] text-gray-500 uppercase font-bold">Channel</span>
+                        <span className="text-xs text-white uppercase">Omnichannel</span>
+                      </div>
+                      <div className="w-px h-8 bg-gray-800" />
+                      <div className="flex flex-col">
+                        <span className="text-[9px] text-gray-500 uppercase font-bold">Status</span>
+                        <span className="text-xs text-emerald-400 font-bold uppercase">Ready</span>
+                      </div>
+                    </div>
+
+                    <div className="flex gap-2">
+                      <button 
+                        onClick={() => handleNegotiate("ACCEPT")}
+                        className="flex-1 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-bold transition-all transform active:scale-95 flex items-center justify-center gap-2"
+                      >
+                        <CheckCircle className="w-4 h-4" />
+                        Execute Action
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Bottom Action Panel */}
@@ -657,6 +726,30 @@ export default function ExplorerPage() {
                                 </span>
                               );
                             })}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Ranked Actions Extracted from Node */}
+                      {selectedNode.properties?.ranked_actions && (
+                        <div className="mt-3 p-3 rounded-lg border border-indigo-500/20 bg-indigo-950/20">
+                          <h4 className="text-xs font-semibold text-indigo-300 mb-2 flex items-center gap-1.5 uppercase tracking-wider">
+                            <Activity className="w-3.5 h-3.5" />
+                            Ranked Actions (Next Steps)
+                          </h4>
+                          <div className="space-y-2">
+                            {JSON.parse(String(selectedNode.properties.ranked_actions)).map((ra: any) => (
+                              <div key={ra.rank} className={`p-2 rounded border text-[10px] ${ra.rank === 1 ? 'bg-indigo-600/10 border-indigo-500/30' : 'bg-gray-900/50 border-gray-800/50'}`}>
+                                <div className="flex items-center justify-between mb-0.5 font-bold">
+                                  <span className={ra.rank === 1 ? 'text-indigo-300' : 'text-gray-400'}>
+                                    #{ra.rank} {ra.action}
+                                  </span>
+                                  <span className="text-gray-500">{((ra.confidence || 0) * 100).toFixed(0)}%</span>
+                                </div>
+                                <p className="text-gray-400 text-[9px] leading-tight">{ra.description}</p>
+                                {ra.revenue_impact && <p className="text-emerald-400 mt-1 font-semibold">{ra.revenue_impact}</p>}
+                              </div>
+                            ))}
                           </div>
                         </div>
                       )}

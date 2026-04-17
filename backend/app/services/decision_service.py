@@ -4,6 +4,7 @@ Decision service — evaluates cases and persists decisions to Neo4j.
 
 import uuid
 import logging
+import json
 from datetime import datetime
 from app.db import execute_query, execute_write
 from app.models.case import (
@@ -176,7 +177,8 @@ def _persist_decision(
     for k, v in graph_features.items():
         if k in ["utilization", "dpd", "credit_score", "wire_amount", "care_gap_days", 
                   "shared_with_threat", "has_travel_intent", "is_high_risk_jurisdiction",
-                  "is_critical_diagnosis", "rx_status", "diag_name", "risk_score"]:
+                  "is_critical_diagnosis", "rx_status", "diag_name", "risk_score",
+                  "view_count", "used_calculator", "test_drive_count", "max_trade_in_equity"]:
             feature_parts.append(f"{k}: {v}")
     features_str = " | ".join(feature_parts) if feature_parts else "N/A"
 
@@ -192,7 +194,8 @@ def _persist_decision(
             reasoning: $reasoning,
             policies_applied: $policies_applied,
             graph_features: $graph_features_str,
-            decision_type: $trigger_event
+            decision_type: $trigger_event,
+            ranked_actions: $ranked_actions_json
         })
         CREATE (dc:DecisionContext {
             id: $context_id,
@@ -216,6 +219,7 @@ def _persist_decision(
         "utilization": account.get("utilization_pct", 0),
         "risk_score": customer.get("risk_score", 0),
         "notes": request.notes or "",
+        "ranked_actions_json": json.dumps([ra.model_dump() for ra in eval_result.ranked_actions]) if eval_result.ranked_actions else "[]"
     })
 
     # Link to Person/Patient

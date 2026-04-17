@@ -224,7 +224,7 @@ def extract_ecommerce_features(session_id: str) -> dict:
         OPTIONAL MATCH (sess)-[purch:PURCHASED]->(veh)
         RETURN sess.is_authenticated AS is_authenticated,
                dev.type AS device_type,
-               count(v) AS view_count,
+               sum(coalesce(v.count, 1)) AS view_count,
                collect(DISTINCT veh.make) AS vehicle_makes,
                calc IS NOT NULL AS used_calculator,
                calc.term_months AS term_months,
@@ -284,6 +284,40 @@ def blend_with_population(
         logger.info(f"Confidence blending: rule={rule_confidence:.2f}, pop={pop_confidence:.2f}, blended={blended:.2f}")
         return round(min(blended, 0.99), 2)
     # No population data yet — use pure rule confidence
+    return rule_confidence
+
+
+def calculate_ecommerce_conversion_rate(action: str) -> float:
+    """
+    Calculate historical conversion rate for a given e-commerce action.
+    Filters strictly to ABANDONED_SESSION decisions so financial decisions
+    don't dilute the signal.
+    """
+    result = execute_query("""
+        MATCH (d:Decision)-[:HAS_CONTEXT]->(dc:DecisionContext)
+        WHERE dc.trigger_event = 'ABANDONED_SESSION' AND d.action = $action
+        WITH count(d) AS total,
+             sum(CASE WHEN d.outcome = 'CONVERTED' THEN 1 ELSE 0 END) AS converted
+        RETURN total, converted
+    """, {"action": action})
+
+    if result and result[0]["total"] > 0:
+        rate = result[0]["converted"] / result[0]["total"]
+        logger.info(f"Ecommerce conversion rate for {action}: {rate:.2f} ({result[0]['converted']}/{result[0]['total']})")
+        return round(rate, 3)
+    return 0.0
+
+
+def blend_ecommerce_confidence(rule_confidence: float, action: str, rule_weight: float = 0.70) -> float:
+    """
+    Blend rule confidence (70%) with historical e-commerce conversion rate (30%).
+    Only activates when population data exists; falls back to rule confidence.
+    """
+    conversion_rate = calculate_ecommerce_conversion_rate(action)
+    if conversion_rate > 0:
+        blended = (rule_weight * rule_confidence) + ((1 - rule_weight) * conversion_rate)
+        logger.info(f"Ecommerce confidence blend: rule={rule_confidence:.2f}, hist_rate={conversion_rate:.2f}, blended={blended:.2f}")
+        return round(min(blended, 0.99), 2)
     return rule_confidence
 
 
@@ -889,7 +923,34 @@ def evaluate_case(
         inventory_stock = features.get("min_inventory_stock")
         test_drives = features.get("test_drive_count", 0)
 
-        # Rule 1: Trade-In Equity Leverage (Capability Vector)
+        # Rule 1: High-Intent Omnichannel Abandoment (Views + Calculator + Test Drive)
+        if views >= 4 and used_calc and test_drives >= 1:
+            result.action = RecommendedAction.OFFER_SMS
+            result.confidence = 0.98
+            result.requires_human_review = False
+            explanation["factors"].append(
+                f"Omnichannel Proof: {views} web views, {device_type} finance calc usage, and {test_drives} physical dealership visits detected. No purchase recorded."
+            )
+            result.applied_policies.append(AppliedPolicy(
+                policy_id="POL-MAR-01", policy_name="Omnichannel Abandonment Recovery",
+                family="MarTech", matched=True,
+                details=f"Precision trigger: Combining Web ({views} views) + Mobile ({term_months}mo calc) + Physical ({test_drives} test drives)."
+            ))
+            
+            result.ranked_actions = [
+                RankedAction(rank=1, action="TRIGGER SMS WITH LOCKED APR", confidence=0.98,
+                             description=f"Send automated SMS locking in {estimated_apr if estimated_apr > 0 else 2.9}% APR for 48 hours based on dealership visit facts.",
+                             revenue_impact="+$28,000 (potential top-line)"),
+                RankedAction(rank=2, action="DEALER CONCIERGE CALL", confidence=0.88,
+                             description="Task showroom manager with VIP follow-up call referencing test drive experience.",
+                             revenue_impact="+$28,000 (potential top-line)"),
+            ]
+            result.confidence = blend_ecommerce_confidence(result.confidence, result.action.value)
+            explanation["population_blend"] = True
+            result.explanation_inputs = explanation
+            return result
+
+        # Rule 2: Trade-In Equity Leverage (Capability Vector)
         if trade_in_equity > 5000 and views >= 4:
             result.action = RecommendedAction.OFFER_TRADE_IN
             result.confidence = 0.95
@@ -911,10 +972,12 @@ def evaluate_case(
                              description=f"Send SMS: 'Trade your car and drive this {makes} for $299/mo'",
                              revenue_impact="+$30k (+inventory acquisition)"),
             ]
+            result.confidence = blend_ecommerce_confidence(result.confidence, result.action.value)
+            explanation["population_blend"] = True
             result.explanation_inputs = explanation
             return result
 
-        # Rule 2: Dynamic Supply Scarcity (FOMO Vector)
+        # Rule 3: Dynamic Supply Scarcity (FOMO Vector)
         if inventory_stock is not None and inventory_stock < 3 and views >= 2:
             result.action = RecommendedAction.SCARCITY_ALERT
             result.confidence = 0.88
@@ -930,10 +993,12 @@ def evaluate_case(
                              description=f"Send 'Only {inventory_stock} Left' notification immediately.",
                              revenue_impact="+$28,000"),
             ]
+            result.confidence = blend_ecommerce_confidence(result.confidence, result.action.value)
+            explanation["population_blend"] = True
             result.explanation_inputs = explanation
             return result
 
-        # Rule 3: Omnichannel Accelerator (Physical-Digital Bridge)
+        # Rule 4: Omnichannel Accelerator (Physical-Digital Bridge)
         if test_drives >= 1 and views >= 1:
             result.action = RecommendedAction.VIP_SHOWROOM_INVITE
             result.confidence = 0.94
@@ -949,29 +1014,8 @@ def evaluate_case(
                              description="Offer $500 closing incentive if they return to dealership today.",
                              revenue_impact="+$28,000"),
             ]
-            result.explanation_inputs = explanation
-            return result
-
-        # Rule 4: High-Intent Abandoment (4+ views and used calculator)
-        if views >= 4 and used_calc:
-            result.action = RecommendedAction.OFFER_SMS
-            result.confidence = 0.92
-            result.requires_human_review = False
-            explanation["factors"].append(f"High-intent detected: {views} views on {makes} with {term_months}-month financing check on {device_type}. Session abandoned.")
-            result.applied_policies.append(AppliedPolicy(
-                policy_id="POL-MAR-01", policy_name="High-Intent Financed Abandonment",
-                family="MarTech", matched=True,
-                details=f"Triggering proactive SMS rate lock due to {views} views + {term_months}mo term check."
-            ))
-            
-            result.ranked_actions = [
-                RankedAction(rank=1, action="TRIGGER SMS WITH LOCKED APR", confidence=0.92,
-                             description=f"Send automated SMS locking in {estimated_apr}% APR for 48 hours to compel conversion.",
-                             revenue_impact="+$28,000 (potential top-line)"),
-                RankedAction(rank=2, action="SEND DEALER FOLLOW-UP", confidence=0.75,
-                             description="Route high-intent lead to local dealer BDC for phone follow-up.",
-                             revenue_impact="+$28,000 (potential top-line)"),
-            ]
+            result.confidence = blend_ecommerce_confidence(result.confidence, result.action.value)
+            explanation["population_blend"] = True
             result.explanation_inputs = explanation
             return result
 
@@ -980,6 +1024,8 @@ def evaluate_case(
         result.confidence = 0.50
         result.requires_human_review = False
         explanation["factors"].append(f"Low intent. {views} views. Session treated as bounce.")
+        result.confidence = blend_ecommerce_confidence(result.confidence, result.action.value)
+        explanation["population_blend"] = True
         result.explanation_inputs = explanation
         return result
 

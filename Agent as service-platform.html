@@ -1,0 +1,1230 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title> Agent-as-a-Service Platform</title>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+
+    <!-- Design System & Layout (Phase 1) -->
+    <style>
+        :root {
+            /* Color System - Dark Mode First */
+            --bg-primary: #0a0e1a;
+            --bg-surface: #111827;
+            --bg-elevated: #1a2332;
+            --bg-hover: #1f2937;
+
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+
+            --accent-primary: #3b82f6;
+            /* Blue */
+            --accent-primary-glow: rgba(59, 130, 246, 0.3);
+            --accent-secondary: #06b6d4;
+            /* Cyan */
+            --accent-success: #10b981;
+            /* Green */
+            --accent-warning: #f59e0b;
+            /* Amber */
+            --accent-danger: #ef4444;
+            /* Red */
+            --accent-purple: #8b5cf6;
+
+            --border-subtle: rgba(255, 255, 255, 0.1);
+            --border-highlight: rgba(59, 130, 246, 0.3);
+
+            /* Typography */
+            --font-primary: 'Inter', system-ui, -apple-system, sans-serif;
+            --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+            /* Effects */
+            --shadow-subtle: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --shadow-glow: 0 0 15px var(--accent-primary-glow);
+            --transition-smooth: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            --radius-md: 8px;
+            --radius-lg: 12px;
+            --radius-xl: 16px;
+        }
+
+        /* Essential Resets */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: var(--font-primary);
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.5;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            /* App-like feel, manage scrolling in panels */
+        }
+
+        /* --- App Shell Layout --- */
+
+        .topbar {
+            height: 60px;
+            background-color: var(--bg-surface);
+            border-bottom: 1px solid var(--border-subtle);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 24px;
+            z-index: 10;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 600;
+            font-size: 1.25rem;
+            letter-spacing: -0.02em;
+        }
+
+        .role-switcher {
+            display: flex;
+            background: var(--bg-elevated);
+            border-radius: var(--radius-md);
+            padding: 4px;
+            border: 1px solid var(--border-subtle);
+        }
+
+        .role-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            padding: 6px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: var(--font-primary);
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: var(--transition-smooth);
+        }
+
+        .role-btn.active {
+            background: var(--accent-primary);
+            color: white;
+            box-shadow: 0 0 10px var(--accent-primary-glow);
+        }
+
+        .app-container {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        /* Sidebar Navigation */
+        .sidebar {
+            width: 240px;
+            background-color: var(--bg-surface);
+            border-right: 1px solid var(--border-subtle);
+            display: flex;
+            flex-direction: column;
+            padding: 16px 0;
+            z-index: 5;
+        }
+
+        .nav-item {
+            padding: 12px 24px;
+            margin: 4px 12px;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: var(--transition-smooth);
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+
+        .nav-item:hover {
+            background-color: var(--bg-hover);
+            color: var(--text-primary);
+        }
+
+        .nav-item.active {
+            background-color: rgba(59, 130, 246, 0.1);
+            color: var(--accent-primary);
+            position: relative;
+        }
+
+        .nav-item.active::before {
+            content: '';
+            position: absolute;
+            left: -12px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 4px;
+            height: 20px;
+            background-color: var(--accent-primary);
+            border-radius: 0 4px 4px 0;
+            box-shadow: var(--shadow-glow);
+        }
+
+        /* Main Context Area (Grid) */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            background-color: var(--bg-primary);
+            overflow-y: auto;
+        }
+
+        .view-container {
+            display: none;
+            /* Hidden by default, toggled via JS */
+            flex: 1;
+            padding: 24px;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .view-container.active {
+            display: flex;
+            animation: fadeIn 0.3s ease;
+        }
+
+        /* Detail Panel (Right Sidebar) */
+        .detail-panel {
+            width: 350px;
+            background-color: var(--bg-surface);
+            border-left: 1px solid var(--border-subtle);
+            display: flex;
+            flex-direction: column;
+            transform: translateX(100%);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: absolute;
+            right: 0;
+            top: 0;
+            bottom: 0;
+            z-index: 20;
+            box-shadow: -5px 0 25px rgba(0, 0, 0, 0.5);
+        }
+
+        .detail-panel.open {
+            transform: translateX(0);
+        }
+
+        .panel-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--border-subtle);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .panel-content {
+            padding: 20px;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 4px;
+        }
+
+        .close-btn:hover {
+            background: var(--bg-hover);
+            color: white;
+        }
+
+        /* --- Utility Classes --- */
+
+        .glass-panel {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-xl);
+            box-shadow: var(--shadow-subtle);
+            backdrop-filter: blur(10px);
+        }
+
+        .glow-border {
+            border: 1px solid var(--border-highlight);
+            box-shadow: var(--shadow-glow);
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .badge.blue {
+            background: rgba(59, 130, 246, 0.2);
+            color: #60a5fa;
+            border: 1px solid rgba(59, 130, 246, 0.3);
+        }
+
+        .badge.green {
+            background: rgba(16, 185, 129, 0.2);
+            color: #34d399;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        .badge.purple {
+            background: rgba(139, 92, 246, 0.2);
+            color: #a78bfa;
+            border: 1px solid rgba(139, 92, 246, 0.3);
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border-radius: var(--radius-md);
+            border: none;
+            cursor: pointer;
+            font-family: var(--font-primary);
+            font-size: 0.875rem;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: var(--transition-smooth);
+        }
+
+        .btn-primary {
+            background: var(--accent-primary);
+            color: white;
+            box-shadow: 0 2px 10px var(--accent-primary-glow);
+        }
+
+        .btn-primary:hover {
+            background: #2563eb;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 15px var(--accent-primary-glow);
+        }
+
+        .btn-outline {
+            background: transparent;
+            color: var(--text-primary);
+            border: 1px solid var(--border-highlight);
+        }
+
+        .btn-outline:hover {
+            background: rgba(59, 130, 246, 0.1);
+        }
+
+        /* Typography Utilities */
+        .text-xl {
+            font-size: 1.5rem;
+            font-weight: 600;
+            line-height: 1.2;
+        }
+
+        .text-lg {
+            font-size: 1.125rem;
+            font-weight: 500;
+        }
+
+        .text-sm {
+            font-size: 0.875rem;
+        }
+
+        .text-muted {
+            color: var(--text-muted);
+        }
+
+        .mono-text {
+            font-family: var(--font-mono);
+            font-size: 0.85em;
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes pulse-glow {
+            0% {
+                box-shadow: 0 0 0 0 var(--accent-primary-glow);
+            }
+
+            70% {
+                box-shadow: 0 0 0 10px rgba(59, 130, 246, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(59, 130, 246, 0);
+            }
+        }
+
+        /* --- Marketplace Styles --- */
+        .marketplace-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .skill-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-lg);
+            padding: 20px;
+            transition: var(--transition-smooth);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            cursor: pointer;
+        }
+
+        .skill-card:hover {
+            border-color: var(--border-highlight);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-glow);
+        }
+
+        .skill-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .skill-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+
+        .skill-source {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .skill-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin: 4px 0;
+        }
+
+        .skill-desc {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            flex: 1;
+        }
+
+        .skill-meta {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-top: auto;
+            padding-top: 12px;
+            border-top: 1px solid var(--border-subtle);
+        }
+
+        .marketplace-filters {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 24px;
+            border-bottom: 1px solid var(--border-subtle);
+            padding-bottom: 16px;
+        }
+
+        .filter-btn {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            padding: 6px 12px;
+            font-weight: 500;
+            transition: var(--transition-smooth);
+            border-bottom: 2px solid transparent;
+        }
+
+        .filter-btn.active {
+            color: var(--accent-primary);
+            border-bottom-color: var(--accent-primary);
+        }
+
+        /* Scrollbar Styling */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-primary);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--bg-hover);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--border-subtle);
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- App Shell Shell -->
+    <header class="topbar">
+        <div class="brand">
+            Agent-as-a-Service Platform
+        </div>
+
+        <div class="role-switcher" id="role-switcher">
+            <button class="role-btn" data-role="end_user">End User</button>
+            <button class="role-btn" data-role="developer">Developer Teams</button>
+            <button class="role-btn active" data-role="admin">Admin Team</button>
+        </div>
+    </header>
+
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <nav class="sidebar">
+            <div class="nav-item active" data-target="view-architecture">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                    <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                    <polyline points="21 15 16 10 5 21"></polyline>
+                </svg>
+                Platform Architecture
+            </div>
+            <div class="nav-item" data-target="view-chat">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                </svg>
+                Agent Chat
+            </div>
+            <div class="nav-item" data-target="view-marketplace">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="9" cy="21" r="1"></circle>
+                    <circle cx="20" cy="21" r="1"></circle>
+                    <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+                </svg>
+                Skills Marketplace
+            </div>
+            <div class="nav-item" data-target="view-dashboard">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="18" y1="20" x2="18" y2="10"></line>
+                    <line x1="12" y1="20" x2="12" y2="4"></line>
+                    <line x1="6" y1="20" x2="6" y2="14"></line>
+                </svg>
+                Analytics Dashboard
+            </div>
+        </nav>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+
+            <!-- Architecture View (Phase 2 Placeholder) -->
+            <div id="view-architecture" class="view-container active">
+                <div class="glass-panel" style="flex: 1; display:flex; flex-direction:column; padding: 24px;">
+                    <h2 class="text-xl">Platform Reference Architecture</h2>
+                    <p class="text-muted" style="margin-bottom: 24px;">Interactive model of the Platform Architecture.
+                        Click components for details.</p>
+                    <div id="architecture-diagram-container"
+                        style="flex:1; background: var(--bg-elevated); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); display:flex; align-items:center; justify-content:center; overflow: hidden; position: relative; width: 100%; min-height: 600px;">
+                        <!-- Scalable SVG Container -->
+                        <svg id="arch-svg" width="100%" height="100%" viewBox="0 0 1000 700"
+                            preserveAspectRatio="xMidYMid meet" style="font-family: var(--font-primary);">
+                            <defs>
+                                <linearGradient id="grad-group" x1="0%" y1="0%" x2="0%" y2="100%">
+                                    <stop offset="0%" stop-color="rgba(17, 24, 39, 0.8)" />
+                                    <stop offset="100%" stop-color="rgba(26, 35, 50, 0.8)" />
+                                </linearGradient>
+                                <linearGradient id="grad-box" x1="0%" y1="0%" x2="0%" y2="100%">
+                                    <stop offset="0%" stop-color="#1e293b" />
+                                    <stop offset="100%" stop-color="#0f172a" />
+                                </linearGradient>
+                                <filter id="glow">
+                                    <feGaussianBlur stdDeviation="3" result="coloredBlur" />
+                                    <feMerge>
+                                        <feMergeNode in="coloredBlur" />
+                                        <feMergeNode in="SourceGraphic" />
+                                    </feMerge>
+                                </filter>
+                                <marker id="arrowhead" markerWidth="8" markerHeight="8" refX="8" refY="4" orient="auto">
+                                    <polygon points="0 0, 8 4, 0 8" fill="var(--accent-primary)" />
+                                </marker>
+                                <marker id="arrowhead-purple" markerWidth="8" markerHeight="8" refX="8" refY="4"
+                                    orient="auto">
+                                    <polygon points="0 0, 8 4, 0 8" fill="var(--accent-purple)" />
+                                </marker>
+                            </defs>
+
+                            <style>
+                                .arch-box {
+                                    fill: url(#grad-box);
+                                    stroke: var(--border-highlight);
+                                    stroke-width: 1.5;
+                                    cursor: pointer;
+                                    transition: all 0.2s;
+                                    rx: 6;
+                                    ry: 6;
+                                }
+
+                                .arch-box:hover {
+                                    stroke: var(--accent-primary);
+                                    filter: url(#glow);
+                                    stroke-width: 2;
+                                }
+
+                                .arch-text {
+                                    fill: var(--text-primary);
+                                    font-size: 13px;
+                                    font-weight: 500;
+                                    pointer-events: none;
+                                    text-anchor: middle;
+                                }
+
+                                .arch-subtext {
+                                    fill: var(--text-secondary);
+                                    font-size: 11px;
+                                    pointer-events: none;
+                                    text-anchor: middle;
+                                }
+
+                                .arch-group {
+                                    fill: url(#grad-group);
+                                    stroke: var(--border-subtle);
+                                    stroke-dasharray: 4, 4;
+                                    stroke-width: 1;
+                                    rx: 8;
+                                    ry: 8;
+                                }
+
+                                .arch-group-title {
+                                    fill: var(--text-secondary);
+                                    font-size: 11px;
+                                    font-weight: 600;
+                                    text-transform: uppercase;
+                                    letter-spacing: 0.1em;
+                                }
+
+                                .arch-path {
+                                    fill: none;
+                                    stroke: var(--accent-primary);
+                                    stroke-width: 1.5;
+                                    stroke-dasharray: 4, 4;
+                                    animation: flow 20s linear infinite;
+                                    marker-end: url(#arrowhead);
+                                }
+
+                                .arch-path-purple {
+                                    fill: none;
+                                    stroke: var(--accent-purple);
+                                    stroke-width: 1.5;
+                                    stroke-dasharray: 4, 4;
+                                    animation: flow 20s linear infinite;
+                                    marker-end: url(#arrowhead-purple);
+                                }
+
+                                .arch-path-label {
+                                    fill: var(--text-muted);
+                                    font-size: 11px;
+                                    background: var(--bg-primary);
+                                }
+
+                                @keyframes flow {
+                                    to {
+                                        stroke-dashoffset: -200;
+                                    }
+                                }
+                            </style>
+
+                            <!-- Client Organisations Group -->
+                            <rect class="arch-group" x="50" y="30" width="900" height="100" />
+                            <text x="60" y="50" class="arch-group-title">Client Organisations</text>
+
+                            <!-- Platform Group -->
+                            <rect class="arch-group" x="20" y="180" width="960" height="500"
+                                style="stroke: #1e3a8a; fill: rgba(10, 14, 26, 0.4);" />
+                            <text x="30" y="200" class="arch-group-title" style="fill: #60a5fa;">Agent as Service
+                                Platform</text>
+
+                            <!-- Components (Clickable) -->
+                            <g class="arch-node" data-id="admin-team" transform="translate(100, 55)">
+                                <rect class="arch-box" width="200" height="60" />
+                                <text x="100" y="25" class="arch-text">Admin Team</text>
+                                <text x="100" y="45" class="arch-subtext">Configure + Publish Skills</text>
+                            </g>
+
+                            <g class="arch-node" data-id="dev-team" transform="translate(400, 55)">
+                                <rect class="arch-box" width="200" height="60" />
+                                <text x="100" y="25" class="arch-text">Developer Teams</text>
+                                <text x="100" y="45" class="arch-subtext">Inner Source Skills</text>
+                            </g>
+
+                            <g class="arch-node" data-id="end-users" transform="translate(700, 55)">
+                                <rect class="arch-box" width="200" height="60" />
+                                <text x="100" y="25" class="arch-text">End Users</text>
+                                <text x="100" y="45" class="arch-subtext">Architect · Developer · PO</text>
+                            </g>
+
+                            <g class="arch-node" data-id="meta-orchestrator" transform="translate(680, 220)">
+                                <rect class="arch-box" width="240" height="60" style="stroke: var(--accent-success);" />
+                                <text x="120" y="25" class="arch-text">Meta-Orchestrator</text>
+                                <text x="120" y="45" class="arch-subtext">Router + Session Manager</text>
+                            </g>
+
+                            <!-- Persona Agents Group -->
+                            <rect class="arch-group" x="480" y="330" width="480" height="90"
+                                style="stroke: var(--accent-success);" />
+                            <text x="490" y="348" class="arch-group-title" style="fill: var(--accent-success);">Persona
+                                Agents</text>
+
+                            <g class="arch-node" data-id="agent-architect" transform="translate(495, 360)">
+                                <rect class="arch-box" width="105" height="40" />
+                                <text x="52.5" y="25" class="arch-text" style="font-size:11px;">Architect Agent</text>
+                            </g>
+                            <g class="arch-node" data-id="agent-developer" transform="translate(610, 360)">
+                                <rect class="arch-box" width="105" height="40" />
+                                <text x="52.5" y="25" class="arch-text" style="font-size:11px;">Developer Agent</text>
+                            </g>
+                            <g class="arch-node" data-id="agent-po" transform="translate(725, 360)">
+                                <rect class="arch-box" width="105" height="40" />
+                                <text x="52.5" y="25" class="arch-text" style="font-size:11px;">PO Agent</text>
+                            </g>
+                            <g class="arch-node" data-id="agent-cto" transform="translate(840, 360)">
+                                <rect class="arch-box" width="105" height="40" />
+                                <text x="52.5" y="25" class="arch-text" style="font-size:11px;">CTO Agent</text>
+                            </g>
+
+                            <!-- Skills Marketplace Group -->
+                            <rect class="arch-group" x="40" y="420" width="400" height="240"
+                                style="stroke: var(--accent-purple); fill: rgba(139, 92, 246, 0.05);" />
+                            <text x="50" y="440" class="arch-group-title" style="fill: var(--accent-purple);">Skills
+                                Marketplace</text>
+
+                            <g class="arch-node" data-id="skill-registry" transform="translate(180, 460)">
+                                <rect class="arch-box" width="120" height="60"
+                                    style="border-radius: 50%; rx: 60; ry: 30;" />
+                                <text x="60" y="25" class="arch-text">Skill Registry</text>
+                                <text x="60" y="45" class="arch-subtext">DB-persisted</text>
+                            </g>
+
+                            <g class="arch-node" data-id="skills-builtin" transform="translate(60, 560)">
+                                <rect class="arch-box" width="100" height="50" />
+                                <text x="50" y="22" class="arch-text" style="font-size:11px;">Built-in</text>
+                                <text x="50" y="38" class="arch-subtext" style="font-size:10px;">Skills</text>
+                            </g>
+                            <g class="arch-node" data-id="skills-github" transform="translate(170, 560)">
+                                <rect class="arch-box" width="140" height="50" />
+                                <text x="70" y="22" class="arch-text" style="font-size:11px;">GitHub Imports</text>
+                                <text x="70" y="38" class="arch-subtext"
+                                    style="font-size:10px;">alirezarezvani/claude-skills</text>
+                            </g>
+                            <g class="arch-node" data-id="skills-custom" transform="translate(320, 560)">
+                                <rect class="arch-box" width="100" height="50" />
+                                <text x="50" y="22" class="arch-text" style="font-size:11px;">Client Custom</text>
+                                <text x="50" y="38" class="arch-subtext" style="font-size:10px;">Skills</text>
+                            </g>
+
+                            <g transform="translate(250, 630)">
+                                <rect class="arch-box" width="120" height="40"
+                                    style="fill: rgba(255,255,255,0.05); stroke-dasharray: 2,2;" />
+                                <text x="60" y="16" class="arch-text" style="font-size:10px;">Community</text>
+                                <text x="60" y="30" class="arch-text" style="font-size:10px;">Contributed Skills</text>
+                            </g>
+
+                            <!-- Platform Memory Group -->
+                            <rect class="arch-group" x="480" y="480" width="480" height="130"
+                                style="stroke: var(--accent-secondary); fill: rgba(6, 182, 212, 0.05);" />
+                            <text x="490" y="500" class="arch-group-title"
+                                style="fill: var(--accent-secondary);">Platform Memory</text>
+
+                            <g class="arch-node" data-id="mem-kg" transform="translate(500, 520)">
+                                <rect class="arch-box" width="130" height="70" />
+                                <text x="65" y="30" class="arch-text" style="font-size:12px;">Knowledge Graph</text>
+                                <text x="65" y="50" class="arch-subtext">Semantic Memory</text>
+                            </g>
+                            <g class="arch-node" data-id="mem-session" transform="translate(650, 520)">
+                                <rect class="arch-box" width="130" height="70" />
+                                <text x="65" y="30" class="arch-text" style="font-size:12px;">Session Store</text>
+                                <text x="65" y="50" class="arch-subtext">PostgreSQL</text>
+                            </g>
+                            <g class="arch-node" data-id="mem-working" transform="translate(800, 520)">
+                                <rect class="arch-box" width="140" height="70" />
+                                <text x="70" y="30" class="arch-text" style="font-size:12px;">Working Memory</text>
+                                <text x="70" y="50" class="arch-subtext">Context Window Mgr</text>
+                            </g>
+
+                            <!-- Connection Lines -->
+                            <!-- End Users to Meta-Orchestrator -->
+                            <path d="M 800 115 L 800 215" class="arch-path" />
+                            <rect x="785" y="150" width="30" height="20" rx="4" fill="var(--bg-surface)"
+                                stroke="var(--border-subtle)" />
+                            <text x="800" y="164" class="arch-path-label" text-anchor="middle">Ask</text>
+
+                            <!-- Admin to Skill Registry -->
+                            <path d="M 200 115 L 200 300 L 240 300 L 240 455" class="arch-path-purple" />
+                            <rect x="155" y="290" width="85" height="20" rx="4" fill="var(--bg-surface)"
+                                stroke="var(--border-subtle)" />
+                            <text x="195" y="304" class="arch-path-label" text-anchor="middle">Manage Skills</text>
+
+                            <!-- Dev Team to Skill Registry -->
+                            <path d="M 500 115 L 500 350 L 280 350 L 280 455" class="arch-path-purple" />
+                            <rect x="360" y="340" width="95" height="20" rx="4" fill="var(--bg-surface)"
+                                stroke="var(--border-subtle)" />
+                            <text x="407" y="354" class="arch-path-label" text-anchor="middle">Contribute Skills</text>
+
+                            <!-- Orchestrator to Agents -->
+                            <path d="M 800 280 L 800 355" class="arch-path" />
+
+                            <!-- Agents to Registry -->
+                            <path d="M 480 380 L 260 380 L 260 455" class="arch-path-purple" />
+
+                            <!-- Agents to Memory -->
+                            <path d="M 610 400 L 610 440 L 565 440 L 565 515" class="arch-path" />
+                            <path d="M 725 400 L 725 460 L 715 460 L 715 515" class="arch-path" />
+                            <path d="M 840 400 L 840 440 L 870 440 L 870 515" class="arch-path" />
+
+                            <!-- Registry to Skills -->
+                            <path d="M 200 520 L 110 520 L 110 555" class="arch-path-purple" />
+                            <path d="M 240 520 L 240 555" class="arch-path-purple" />
+                            <path d="M 280 520 L 370 520 L 370 555" class="arch-path-purple" />
+
+                            <!-- Custom to Community -->
+                            <path d="M 370 610 L 370 625 L 310 625 L 310 625" class="arch-path-purple" />
+                            <rect x="340" y="618" width="55" height="16" rx="4" fill="var(--bg-surface)"
+                                stroke="var(--border-subtle)" />
+                            <text x="367" y="630" class="arch-path-label" text-anchor="middle"
+                                style="font-size:9px;">Promote</text>
+
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chat View (Phase 8) -->
+            <div id="view-chat" class="view-container">
+                <div class="chat-layout">
+                    <div class="chat-header">
+                        <div>
+                            <h2 class="text-lg" style="margin-bottom:4px;">Agent Interaction</h2>
+                            <div class="text-sm text-muted">Powered by Meta-Orchestrator</div>
+                        </div>
+                        <div class="agent-selector">
+                            <span class="text-sm text-muted">Force Route:</span>
+                            <select class="agent-select" id="chat-agent-select">
+                                <option value="auto">Auto (Meta-Orchestrator)</option>
+                                <option value="architect">Architect Agent</option>
+                                <option value="developer">Developer Agent</option>
+                                <option value="po">PO Agent</option>
+                                <option value="cto">CTO Agent</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="chat-history" id="chat-history">
+                        <div class="system-msg">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent-success)"
+                                stroke-width="2">
+                                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                                <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                            </svg>
+                            Session started. Connected to Platform.
+                        </div>
+                        <!-- Initial greeting -->
+                        <div class="chat-bubble agent">
+                            <div class="chat-avatar">🧠</div>
+                            <div class="chat-content">
+                                <div class="chat-skills-used">
+                                    <span class="badge blue">Context Router</span>
+                                </div>
+                                <div>Hello! I am the Meta-Orchestrator. I can route your request to the necessary
+                                    persona agent (Architect, Developer, PO, or CTO). What would you like to build or
+                                    discuss today?</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="chat-input-area">
+                        <div class="chat-input-wrapper">
+                            <textarea class="chat-input" id="chat-textarea"
+                                placeholder="Type a message... (e.g. 'Can you create an architecture diagram for our new microservices?')"
+                                rows="1"></textarea>
+                            <button class="send-btn" id="chat-send-btn">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2" stroke-linecap="round">
+                                    <line x1="22" y1="2" x2="11" y2="13"></line>
+                                    <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Marketplace View (Phase 5 Placeholder) -->
+            <div id="view-marketplace" class="view-container">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <h2 class="text-xl">Skills Marketplace</h2>
+                        <p class="text-muted">Discover and install capabilities for Persona Agents</p>
+                    </div>
+                    <button class="btn btn-primary">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="17 8 12 3 7 8"></polyline>
+                            <line x1="12" y1="3" x2="12" y2="15"></line>
+                        </svg>
+                        Import Skill
+                    </button>
+                </div>
+
+                <div class="marketplace-filters" id="skill-filters">
+                    <button class="filter-btn active" data-filter="all">All Skills</button>
+                    <button class="filter-btn" data-filter="builtin">Built-in</button>
+                    <button class="filter-btn" data-filter="github">GitHub Imports</button>
+                    <button class="filter-btn" data-filter="custom">Client Custom</button>
+                </div>
+
+                <div class="marketplace-grid" id="skills-grid">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+
+            <!-- Dashboard View (Phase 9 Placeholder) -->
+            <div id="view-dashboard" class="view-container">
+                <h2 class="text-xl">Platform Analytics</h2>
+                <p class="text-muted">Dashboard Placeholder</p>
+            </div>
+
+            <!-- Right Detail Panel -->
+            <div id="detail-panel" class="detail-panel">
+                <div class="panel-header">
+                    <h3 id="panel-title" class="text-lg">Component Details</h3>
+                    <button class="close-btn" id="close-panel">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    </button>
+                </div>
+                <div class="panel-content" id="panel-content">
+                    <p class="text-muted">Select a component from the architecture diagram to view its details.</p>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- Scripts (Phases 2-9) -->
+    <script>
+        // --- Navigation Logic ---
+        document.addEventListener('DOMContentLoaded', () => {
+            const navItems = document.querySelectorAll('.nav-item');
+            const viewContainers = document.querySelectorAll('.view-container');
+
+            navItems.forEach(item => {
+                item.addEventListener('click', () => {
+                    // Update Nav Classes
+                    navItems.forEach(nav => nav.classList.remove('active'));
+                    item.classList.add('active');
+
+                    // Show corresponding view
+                    const targetId = item.getAttribute('data-target');
+                    viewContainers.forEach(view => {
+                        view.classList.remove('active');
+                        if (view.id === targetId) {
+                            view.classList.add('active');
+                        }
+                    });
+
+                    // Close panel on view switch
+                    document.getElementById('detail-panel').classList.remove('open');
+                });
+            });
+
+            // Role Switcher styling (UX only for now)
+            const roleBtns = document.querySelectorAll('.role-btn');
+            roleBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    roleBtns.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                });
+            });
+
+            // Close Panel Logic
+            document.getElementById('close-panel').addEventListener('click', () => {
+                document.getElementById('detail-panel').classList.remove('open');
+            });
+        });
+
+        // --- Utility to Open Panel ---
+        function openDetailPanel(title, htmlContent) {
+            document.getElementById('panel-title').innerText = title;
+            document.getElementById('panel-content').innerHTML = htmlContent;
+            document.getElementById('detail-panel').classList.add('open');
+        }
+
+        // --- Phase 3 & 4 & 5: Data Models ---
+
+        // 1. Skills Registry Database (In-Memory)
+        const SkillRegistry = [
+            // Built-in Skills
+            { id: 'sk-context-router', name: 'Context Router', source: 'builtin', icon: '🧠', category: 'Core', desc: 'Analyzes intent and routes queries to appropriate agents.', personas: ['System'] },
+            { id: 'sk-format-md', name: 'Markdown Formatter', source: 'builtin', icon: '📝', category: 'Core', desc: 'Ensures output follows strict markdown formatting rules.', personas: ['All'] },
+
+            // GitHub Imports (from alirezarezvani/claude-skills)
+            { id: 'senior-architect', name: 'Senior Architect', source: 'github', sourceUrl: 'alirezarezvani/claude-skills/engineering-team', icon: '🏗️', category: 'Engineering', desc: 'Architecture design, tech stack decisions, and C4 diagram generation.', personas: ['Architect Agent'], scripts: ['architecture_diagram_generator.py', 'dependency_analyzer.py'] },
+            { id: 'senior-backend', name: 'Senior Backend', source: 'github', sourceUrl: 'alirezarezvani/claude-skills/engineering-team', icon: '⚙️', category: 'Engineering', desc: 'API design, DB optimization, Go/Node.js/Python architectures.', personas: ['Developer Agent'] },
+            { id: 'senior-frontend', name: 'Senior Frontend', source: 'github', sourceUrl: 'alirezarezvani/claude-skills/engineering-team', icon: '🎨', category: 'Engineering', desc: 'React/Next.js scaffolding, bundle analysis, UI optimizations.', personas: ['Developer Agent'] },
+            { id: 'tdd-guide', name: 'TDD Guide', source: 'github', sourceUrl: 'alirezarezvani/claude-skills/engineering-team', icon: '🧪', category: 'Testing', desc: 'Test-Driven Development workflows and coverage analysis.', personas: ['Developer Agent'] },
+            { id: 'tech-stack-evaluator', name: 'Stack Evaluator', source: 'github', sourceUrl: 'alirezarezvani/claude-skills/engineering-team', icon: '⚖️', category: 'Strategy', desc: 'Decision matrices for technology choices and trade-offs.', personas: ['Architect Agent', 'CTO Agent'] },
+
+            // Client Custom Skills
+            { id: 'cust-compliance', name: 'Compliance Checker', source: 'custom', icon: '🛡️', category: 'Security', desc: 'Checks code against internal enterprise compliance rules.', personas: ['Developer Agent', 'Architect Agent'] },
+            { id: 'cust-api-connector', name: 'Internal API Stub', source: 'custom', icon: '🔌', category: 'Tools', desc: 'Mocks responses for internal legacy SOAP systems.', personas: ['Developer Agent'] }
+        ];
+
+        // 2. Persona Agents
+        const PersonaAgents = {
+            'architect': { name: 'Architect Agent', icon: '🏗️', systemPrompt: 'Senior software architect focused on scalable system design.', color: 'blue' },
+            'developer': { name: 'Developer Agent', icon: '💻', systemPrompt: 'Senior full-stack engineering proxy. Code first approach.', color: 'green' },
+            'po': { name: 'PO Agent', icon: '📋', systemPrompt: 'Product Owner proxy focused on user stories and epic design.', color: 'purple' },
+            'cto': { name: 'CTO Agent', icon: '👔', systemPrompt: 'Executive technology officer focusing on strategy and cost.', color: 'amber' }
+        };
+
+        // 3. Meta-Orchestrator
+        const MetaOrchestrator = {
+            routeMessage: (msg) => {
+                const lower = msg.toLowerCase();
+                if (lower.includes('arch') || lower.includes('design') || lower.includes('diagram')) return 'architect';
+                if (lower.includes('code') || lower.includes('test') || lower.includes('bug')) return 'developer';
+                if (lower.includes('feature') || lower.includes('user story') || lower.includes('epic')) return 'po';
+                if (lower.includes('cost') || lower.includes('strategy') || lower.includes('vendor')) return 'cto';
+                return 'architect'; // Default routing
+            }
+        };
+
+        // --- Render Marketplace UI ---
+        function renderSkills(filterSource = 'all') {
+            const grid = document.getElementById('skills-grid');
+            grid.innerHTML = '';
+
+            const filteredSkills = filterSource === 'all'
+                ? SkillRegistry
+                : SkillRegistry.filter(s => s.source === filterSource);
+
+            filteredSkills.forEach(skill => {
+                const badgeColor = skill.source === 'builtin' ? 'blue' : (skill.source === 'github' ? 'purple' : 'green');
+                const sourceText = skill.source === 'github' ? 'GitHub Import' : skill.source;
+
+                const card = document.createElement('div');
+                card.className = 'skill-card';
+                card.innerHTML = `
+                    <div class="skill-header">
+                        <div class="skill-icon">${skill.icon}</div>
+                        <span class="badge ${badgeColor}">${sourceText}</span>
+                    </div>
+                    <div class="skill-title">${skill.name}</div>
+                    <div class="skill-desc">${skill.desc}</div>
+                    <div class="skill-meta">
+                        ${skill.personas.map(p => `<span class="badge" style="background:var(--bg-elevated); border:1px solid var(--border-subtle); color:var(--text-secondary);">${p}</span>`).join('')}
+                    </div>
+                `;
+
+                card.addEventListener('click', () => {
+                    let content = `<p>${skill.desc}</p>`;
+                    if (skill.source === 'github') {
+                        content += `<p class="mono-text" style="color:var(--accent-purple); margin-top:10px;">Source: ${skill.sourceUrl}</p>`;
+                    }
+                    if (skill.scripts) {
+                        content += `<h4 style="margin-top:15px; margin-bottom:5px;">Execution Scripts</h4><ul style="padding-left:20px;">`;
+                        skill.scripts.forEach(sc => content += `<li class="mono-text">${sc}</li>`);
+                        content += `</ul>`;
+                    }
+                    openDetailPanel(`Skill: ${skill.name}`, content);
+                });
+
+                grid.appendChild(card);
+            });
+        }
+
+        // Initialize Marketplace
+        document.addEventListener('DOMContentLoaded', () => {
+            renderSkills();
+
+            // Filter clicks
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                    e.target.classList.add('active');
+                    renderSkills(e.target.getAttribute('data-filter'));
+                });
+            });
+        });
+
+        // --- Phase 8: Chat Interaction Logic ---
+
+        // Simulated automated responses
+        const agentResponses = {
+            'architect': "Based on your request, I recommend a microservices architecture. Let me use the <span style='color:var(--accent-primary)'>Architecture Diagram Generator</span> skill to produce a C4 diagram for you. <br/><br/>I'd suggest breaking this into an API Gateway, an Auth Service, and core domain services. We can persist this in PostgreSQL.",
+            'developer': "I can help implement that. Using the <span style='color:var(--accent-primary)'>Code Scaffolder</span> skill, I'll generate the boilerplate for a Node.js Express service. <br/><br/>```javascript\nconst express = require('express');\nconst app = express();\n\napp.get('/api/health', (req, res) => {\n  res.json({status: 'ok'});\n});\n```",
+            'po': "Let's capture that as a formal epic. Using my <span style='color:var(--accent-primary)'>Epic Builder</span> skill, here is a draft User Story:<br/><br/><strong>As a</strong> user<br/><strong>I want</strong> to view the dashboard<br/><strong>So that</strong> I can see platform metrics.<br/><br/><em>Acceptance Criteria:</em><br/>1. Page loads under 200ms.",
+            'cto': "Looking at the strategic impact, using my <span style='color:var(--accent-primary)'>Tech Stack Evaluator</span> skill, adopting this technology will increase our fixed AWS costs by 15%, but reduce time-to-market for new features. I approve the proof of concept."
+        };
+
+        const chatAutoResponses = [
+            "That's an interesting approach. Let me analyze the dependencies.",
+            "I've updated the working memory with this context.",
+            "Would you like me to generate a formal document for this decision?",
+            "I can stub out the API endpoints for that if you'd like."
+        ];
+
+        document.getElementById('chat-send-btn').addEventListener('click', sendChatMessage);
+        document.getElementById('chat-textarea').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendChatMessage();
+            }
+        });
+
+        function sendChatMessage() {
+            const input = document.getElementById('chat-textarea');
+            const message = input.value.trim();
+            if (!message) return;
+
+            const history = document.getElementById('chat-history');
+
+            // 1. Add User Message
+            addMessageToChat(history, 'user', 'U', message);
+            input.value = '';
+
+            // scroll to bottom
+            history.scrollTop = history.scrollHeight;
+
+            // 2. Determine Routing
+            const forceRoute = document.getElementById('chat-agent-select').value;
+            let targetAgentId = forceRoute;
+
+            if (forceRoute === 'auto') {
+                targetAgentId = MetaOrchestrator.routeMessage(message);
+
+                // Show Routing System Message
+                const routeMsg = document.createElement('div');
+                routeMsg.className = 'system-msg';
+                routeMsg.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent-purple)" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"></path></svg> Orchestrator routed request to the <strong>${PersonaAgents[targetAgentId].name}</strong> based on intent analysis.`;
+                history.appendChild(routeMsg);
+            }
+
+            // 3. Simulate Agent Processing
+            setTimeout(() => {
+                const agent = PersonaAgents[targetAgentId];
+
+                // Find primary skill for badge
+                const primarySkill = SkillRegistry.find(s => s.personas.includes(agent.name) || s.personas.includes('All'));
+                const skillBadge = primarySkill ? `<span class="badge ${agent.color}">${primarySkill.name}</span>` : '';
+
+                // Determine response
+                let responseText = agentResponses[targetAgentId];
+                // If it's a generic follow up, randomize a bit
+                if (history.children.length > 5) {
+                    responseText = chatAutoResponses[Math.floor(Math.random() * chatAutoResponses.length)];
+                }
+
+                const content = `
+                    <div class="chat-skills-used">
+                        ${skillBadge}
+                        <span class="badge" style="background:transparent; border:1px solid var(--border-subtle); color:var(--text-secondary)">Working Memory context attached</span>
+                    </div>
+                    <div>${responseText}</div>
+                `;
+
+                addMessageToChat(history, 'agent', agent.icon, content);
+                history.scrollTop = history.scrollHeight;
+
+            }, 800); // simulate network/processing delay
+        }
+
+        function addMessageToChat(container, role, avatar, content) {
+            const bubble = document.createElement('div');
+            bubble.className = `chat-bubble ${role}`;
+            bubble.innerHTML = `
+                <div class="chat-avatar">${avatar}</div>
+                <div class="chat-content">
+                    ${content}
+                </div>
+            `;
+            container.appendChild(bubble);
+        }
+
+        // --- Phase 2: Architecture Diagram Data & Logic ---
+        const componentData = {
+            'admin-team': { title: 'Admin Team', content: '<p>Platform administrators responsible for curating the skills marketplace, managing active personas, and monitoring overall platform health and cost controls.</p>' },
+            'dev-team': { title: 'Developer Teams', content: '<p>Internal development teams that contribute bespoke "Inner Source" skills to the marketplace, extending the capabilities of the persona agents for proprietary tasks.</p>' },
+            'end-users': { title: 'End Users', content: '<p>The primary consumers of the platform. They interact with specific persona agents to accelerate their daily tasks using natural language constraints.</p>' },
+            'meta-orchestrator': { title: 'Meta-Orchestrator', content: '<p>The routing engine of the AaaS platform. Analyses incoming requests to determine the most suitable persona agent, maintains session state, and ensures continuity across multi-turn interactions.</p><div class="badge green" style="margin-top:10px;">Active</div>' },
+            'agent-architect': { title: 'Architect Agent', content: '<p>Specializes in system design, technology evaluation, and producing C4 architectural diagrams.</p><strong>Primary Skills:</strong><ul><li>Architecture Diagram Generator</li><li>Dependency Analyzer</li><li>Project Architect</li></ul>' },
+            'agent-developer': { title: 'Developer Agent', content: '<p>Focuses on code scaffolding, code review, and test generation.</p><strong>Primary Skills:</strong><ul><li>Code Scaffolder</li><li>Test Driven Development Guide</li><li>API Implementer</li></ul>' },
+            'agent-po': { title: 'PO Agent', content: '<p>Assists with agile methodologies, epic design, and writing user stories with acceptance criteria.</p><strong>Primary Skills:</strong><ul><li>Epic Builder</li><li>Story Point Estimator</li></ul>' },
+            'agent-cto': { title: 'CTO Agent', content: '<p>Provides strategic technology advice, vendor evaluation, and cost-benefit analysis.</p><strong>Primary Skills:</strong><ul><li>Tech Stack Evaluator</li><li>Build vs Buy Analyzer</li></ul>' },
+            'skill-registry': { title: 'Skill Registry', content: '<p>The central persisted database of all available capabilities. Maps available skill metadata to the underlying execution scripts and reference guides.</p><p class="mono-text" style="color:var(--text-muted); margin-top:10px;">backend: PostgreSQL</p>' },
+            'skills-builtin': { title: 'Built-in Skills', content: '<p>Core capabilities shipped with the platform to handle basic context passing and formatting.</p>' },
+            'skills-github': { title: 'GitHub Imports', content: '<p>Skills pulled dynamically from external remotes.<br/><br/><strong>Source:</strong> <a href="#" style="color:var(--accent-primary)">alirezarezvani/claude-skills</a><br/>Contains 18+ engineering team capabilities mimicking senior engineering roles.</p>' },
+            'skills-custom': { title: 'Client Custom Skills', content: '<p>Proprietary enterprise skills integrated via the CI/CD pipeline, connecting agents to internal non-public APIs and databases.</p>' },
+            'mem-kg': { title: 'Knowledge Graph', content: '<p>Semantic memory system storing relationships between concepts, decisions, and organizational architecture.</p>' },
+            'mem-session': { title: 'Session Store', content: '<p>PostgreSQL-backed persistence layer for all multi-turn chats, enabling resuming of work days or weeks later.</p>' },
+            'mem-working': { title: 'Working Memory', content: '<p>Active Context Window Manager that intelligently packs and summarizes context to fit within the LLMs token limits.</p>' }
+        };
+
+        document.querySelectorAll('.arch-node').forEach(node => {
+            node.addEventListener('click', (e) => {
+                const id = node.getAttribute('data-id');
+                if (componentData[id]) {
+                    openDetailPanel(componentData[id].title, componentData[id].content);
+
+                    // Visual feedback
+                    document.querySelectorAll('.arch-node .arch-box').forEach(b => b.style.stroke = '');
+                    node.querySelector('.arch-box').style.stroke = 'white';
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>

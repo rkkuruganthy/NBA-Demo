@@ -29,14 +29,14 @@ def find_precedents(
     try:
         results = execute_query("""
             MATCH (d:Decision)-[:ABOUT]->(p:Person)
-            MATCH (d)-[:ABOUT]->(a:Account)
+            OPTIONAL MATCH (d)-[:ABOUT]->(a:Account)
             MATCH (d)-[:HAS_CONTEXT]->(dc:DecisionContext)
             WHERE d.status IN ['COMPLETED', 'PENDING', 'CLOSED']
 
             // Compute similarity components
             WITH d, p, a, dc,
                  CASE WHEN p.segment = $segment THEN 0.3 ELSE 0.0 END AS seg_score,
-                 CASE WHEN abs(dc.utilization_at_time - $utilization) <= 15 THEN
+                 CASE WHEN dc.utilization_at_time IS NOT NULL AND abs(dc.utilization_at_time - $utilization) <= 15 THEN
                       0.25 * (1 - abs(dc.utilization_at_time - $utilization) / 15)
                  ELSE 0.0 END AS util_score,
                  CASE WHEN abs(dc.risk_at_time - $risk_score) <= 0.2 THEN
