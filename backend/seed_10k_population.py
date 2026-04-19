@@ -404,33 +404,59 @@ def seed_all():
             CREATE (t)-[:DESTINATION]->(dest)
         """)
 
-        # Healthcare Sad Path
+        # Healthcare Sad Path (High-Risk Escalation) — Robert Jones
         session.run("""
-            CREATE (p:Patient {id: 'CUST-MED-SAD', name: 'Robert Jones', age: 68, risk_tier: 'High'})
-            CREATE (ctx:Context {id: 'MED-S-CTX', risk_score: 0.88})
-            CREATE (p)-[:HAS_CONTEXT]->(ctx)
-            CREATE (enc:Encounter {id: 'MED-S-ENC', type: 'Inpatient Stay', department: 'Cardiology', date: '2026-03-01'})
-            CREATE (p)-[:HAD_ENCOUNTER]->(enc)
-            CREATE (diag:Diagnosis {id: 'MED-S-DIAG', code: 'I50.9', name: 'Heart Failure, Unspecified'})
-            CREATE (enc)-[:RESULTED_IN]->(diag)
-            CREATE (rx:Prescription {id: 'MED-S-RX', medication: 'Entresto 97/103mg', status: 'Active'})
-            CREATE (diag)-[:TREATMENT_PLAN]->(rx)
-            CREATE (gap:Entity:Threat {id: 'MED-S-GAP', type: 'Missed Fulfillment', duration_days: 14})
-            CREATE (rx)-[:HAS_CARE_GAP]->(gap)
+            MERGE (p:Patient {id: 'CUST-MED-SAD', name: 'Robert Jones', age: 68, risk_tier: 'High'})
+            MERGE (ctx:Context {id: 'MED-S-CTX', risk_score: 0.88, sdoh_food_desert: true, sdoh_transportation_risk: 'high', zip_code: '90001'})
+            MERGE (p)-[:HAS_CONTEXT]->(ctx)
+            
+            // IoT Device Data
+            MERGE (dev:Device {id: 'DEV-CPAP-RJ', type: 'Medical', name: 'ResMed CPAP'})
+            MERGE (p)-[:OWNS_DEVICE]->(dev)
+            MERGE (tel:Telemetry {id: 'TEL-RJ-01', metric: 'Adherence', value: '42%', status: 'Non-Compliant'})
+            MERGE (dev)-[:RECORDED]->(tel)
+            
+            // Omnichannel Intent (Patient Portal)
+            MERGE (sess:Session {id: 'SESS-MED-RJ', platform: 'Patient Portal', date: '2026-04-18'})
+            MERGE (symp:SymptomSearch {id: 'SYMP-RJ-01', term: 'shortness of breath worsening'})
+            MERGE (p)-[:INITIATED_SESSION]->(sess)
+            MERGE (sess)-[:SEARCHED_SYMPTOM]->(symp)
+            
+            // Clinical Pipeline
+            MERGE (enc:Encounter {id: 'MED-S-ENC', type: 'Inpatient Stay', department: 'Cardiology', date: '2026-03-01'})
+            MERGE (p)-[:HAD_ENCOUNTER]->(enc)
+            MERGE (diag:Diagnosis {id: 'MED-S-DIAG', code: 'I50.9', name: 'Heart Failure, Unspecified'})
+            MERGE (enc)-[:RESULTED_IN]->(diag)
+            MERGE (rx:Prescription {id: 'MED-S-RX', medication: 'Entresto 97/103mg', status: 'Unfulfilled'})
+            MERGE (diag)-[:TREATMENT_PLAN]->(rx)
+            MERGE (gap:CareGap:Threat {id: 'MED-S-GAP', type: 'Missed Cardiology Rx', duration_days: 14})
+            MERGE (rx)-[:HAS_CARE_GAP]->(gap)
         """)
 
-        # Healthcare Happy Path
+        # Healthcare Happy Path (Cleared / Compliant) — Mary Poppins
         session.run("""
-            CREATE (p:Patient {id: 'CUST-MED-HAPPY', name: 'Mary Poppins', age: 52, risk_tier: 'Low'})
-            CREATE (ctx:Context {id: 'MED-H-CTX', risk_score: 0.1})
-            CREATE (p)-[:HAS_CONTEXT]->(ctx)
-            CREATE (enc:Encounter {id: 'MED-H-ENC', type: 'Annual Physical', department: 'Primary Care', date: '2026-03-15'})
-            CREATE (p)-[:HAD_ENCOUNTER]->(enc)
-            CREATE (diag:Diagnosis {id: 'MED-H-DIAG', code: 'Z00.00', name: 'General Adult Exam'})
-            CREATE (enc)-[:RESULTED_IN]->(diag)
-            CREATE (rx:Prescription {id: 'MED-H-RX', medication: 'Lisinopril 10mg', status: 'Fulfilled'})
-            CREATE (diag)-[:TREATMENT_PLAN]->(rx)
+            MERGE (p:Patient {id: 'CUST-MED-HAPPY', name: 'Mary Poppins', age: 52, risk_tier: 'Low'})
+            MERGE (ctx:Context {id: 'MED-H-CTX', risk_score: 0.1, sdoh_food_desert: false, zip_code: '90210'})
+            MERGE (p)-[:HAS_CONTEXT]->(ctx)
+            
+            // IoT Device Data
+            MERGE (dev:Device {id: 'DEV-WATCH-MP', type: 'Wearable', name: 'Apple Watch Series 9'})
+            MERGE (p)-[:OWNS_DEVICE]->(dev)
+            MERGE (tel:Telemetry {id: 'TEL-MP-01', metric: 'ECG', value: 'Normal Sinus Rhythm', status: 'Healthy'})
+            MERGE (dev)-[:RECORDED]->(tel)
+            
+            // Clinical Pipeline & Pharmacy Node
+            MERGE (enc:Encounter {id: 'MED-H-ENC', type: 'Annual Physical', department: 'Primary Care', date: '2026-03-15'})
+            MERGE (p)-[:HAD_ENCOUNTER]->(enc)
+            MERGE (diag:Diagnosis {id: 'MED-H-DIAG', code: 'Z00.00', name: 'General Adult Exam'})
+            MERGE (enc)-[:RESULTED_IN]->(diag)
+            MERGE (rx:Prescription {id: 'MED-H-RX', medication: 'Lisinopril 10mg', status: 'Active'})
+            MERGE (diag)-[:TREATMENT_PLAN]->(rx)
+            
+            MERGE (pharm:Pharmacy {id: 'PHARM-CVS-01', name: 'CVS Pharmacy #412'})
+            MERGE (rx)-[:FULFILLED_AT {date: '2026-03-16'}]->(pharm)
         """)
+
 
         # E-Commerce Sad Path (High Intent Abandonment) — Robert Vance
         # Full omnichannel graph: Person → Session → Device → BrowsedVehicle → Calculator → PhysicalVisit → Dealership
@@ -569,6 +595,95 @@ def seed_all():
                 print("Could not locate ECOM cohort block in seed.cypher.")
         except Exception as e:
             print(f"Failed to load historical ECOM cohorts file: {e}")
+
+        # ============================================
+        # PHASE 8: HISTORICAL HEALTHCARE COHORTS
+        # ============================================
+        print("Seeding historical Healthcare cohorts...")
+        
+        # 1. 5 High-Risk Escalations (POL-MED-01)
+        session.run("""
+            UNWIND range(1, 5) AS i
+            MERGE (pol:Policy {id: 'POL-MED-01'})
+            MERGE (p:Patient {id: 'CUST-MED-HI-' + toString(i), name: 'HighRisk Patient ' + toString(i), age: 60+i, risk_tier: 'High'})
+            
+            MERGE (ctx:Context {id: 'CTX-MED-HI-' + toString(i), risk_score: 0.8 + (i*0.02), sdoh_transportation_risk: 'high'})
+            MERGE (p)-[:HAS_CONTEXT]->(ctx)
+            
+            MERGE (dev:Device {id: 'DEV-CPAP-HI-' + toString(i), type: 'Medical'})
+            MERGE (tel:Telemetry {id: 'TEL-HI-' + toString(i), metric: 'Adherence', value: toString(30 + i*5) + '%', status: 'Non-Compliant'})
+            MERGE (p)-[:OWNS_DEVICE]->(dev)
+            MERGE (dev)-[:RECORDED]->(tel)
+            
+            MERGE (sess:Session {id: 'SESS-HI-' + toString(i), platform: 'Patient Portal'})
+            MERGE (symp:SymptomSearch {id: 'SYMP-HI-' + toString(i), term: 'chest pain'})
+            MERGE (p)-[:INITIATED_SESSION]->(sess)
+            MERGE (sess)-[:SEARCHED_SYMPTOM]->(symp)
+            
+            MERGE (dc:Decision {id: 'DEC-MED-HI-' + toString(i), action: 'TRIGGER_CLINICAL_INTERVENTION', 
+                               confidence: 0.95, status: 'COMPLETED', 
+                               outcome: CASE WHEN i < 4 THEN 'AVOIDED_ER' ELSE 'ADMITTED_TO_ER' END,
+                               created_at: datetime('2026-04-01T08:00:00Z'), decision_type: 'CARE_GAP_REVIEW'})
+            MERGE (dx:DecisionContext {id: 'DCX-MED-HI-' + toString(i), trigger_event: 'CARE_GAP_REVIEW', 
+                                      risk_at_time: 0.8 + (i*0.02), notes: 'Intervened due to missing Rx and chest pain search'})
+            
+            MERGE (dc)-[:HAS_CONTEXT]->(dx)
+            MERGE (dc)-[:ABOUT]->(p)
+            MERGE (dc)-[:APPLIED_POLICY]->(pol)
+        """)
+
+        # 2. 5 Chronic Monitoring Calls (POL-MED-02)
+        session.run("""
+            UNWIND range(1, 5) AS i
+            MERGE (pol:Policy {id: 'POL-MED-02'})
+            MERGE (p:Patient {id: 'CUST-MED-CH-' + toString(i), name: 'Chronic Patient ' + toString(i), age: 50+i, risk_tier: 'Medium'})
+            
+            MERGE (ctx:Context {id: 'CTX-MED-CH-' + toString(i), risk_score: 0.5 + (i*0.02)})
+            MERGE (p)-[:HAS_CONTEXT]->(ctx)
+            
+            MERGE (dev:Device {id: 'DEV-WATCH-CH-' + toString(i), type: 'Wearable'})
+            MERGE (tel:Telemetry {id: 'TEL-CH-' + toString(i), metric: 'HRV', status: 'Irregular'})
+            MERGE (p)-[:OWNS_DEVICE]->(dev)
+            MERGE (dev)-[:RECORDED]->(tel)
+            
+            MERGE (gap:CareGap:Threat {id: 'MED-CH-GAP-' + toString(i), type: 'Missing Lab Results', duration_days: 5})
+            MERGE (p)-[:HAS_CARE_GAP]->(gap)
+            
+            MERGE (dc:Decision {id: 'DEC-MED-CH-' + toString(i), action: 'SCHEDULE_FOLLOW_UP', 
+                               confidence: 0.85, status: 'COMPLETED', outcome: 'ADHERENT',
+                               created_at: datetime('2026-04-10T11:00:00Z'), decision_type: 'CARE_GAP_REVIEW'})
+            MERGE (dx:DecisionContext {id: 'DCX-MED-CH-' + toString(i), trigger_event: 'CARE_GAP_REVIEW', 
+                                      risk_at_time: 0.5 + (i*0.02), notes: 'Follow-up scheduled due to Apple watch irregularity'})
+            
+            MERGE (dc)-[:HAS_CONTEXT]->(dx)
+            MERGE (dc)-[:ABOUT]->(p)
+            MERGE (dc)-[:APPLIED_POLICY]->(pol)
+        """)
+
+        # 3. 15 Compliant Clearances (POL-MED-03)
+        session.run("""
+            UNWIND range(1, 15) AS i
+            MERGE (pol:Policy {id: 'POL-MED-03'})
+            MERGE (p:Patient {id: 'CUST-MED-LO-' + toString(i), name: 'LowRisk Patient ' + toString(i), age: 30+i, risk_tier: 'Low'})
+            
+            MERGE (ctx:Context {id: 'CTX-MED-LO-' + toString(i), risk_score: 0.1})
+            MERGE (p)-[:HAS_CONTEXT]->(ctx)
+            
+            MERGE (pharm:Pharmacy {id: 'PHARM-MED-LO-' + toString(i), name: 'CVS'})
+            MERGE (rx:Prescription {id: 'RX-LO-' + toString(i), status: 'Active'})
+            MERGE (rx)-[:FULFILLED_AT]->(pharm)
+            MERGE (p)-[:HAS_PRESCRIPTION]->(rx)
+            
+            MERGE (dc:Decision {id: 'DEC-MED-LO-' + toString(i), action: 'CLEAR_PATIENT', 
+                               confidence: 0.99, status: 'COMPLETED', outcome: 'COMPLIANT',
+                               created_at: datetime('2026-04-15T09:00:00Z'), decision_type: 'CARE_GAP_REVIEW'})
+            MERGE (dx:DecisionContext {id: 'DCX-MED-LO-' + toString(i), trigger_event: 'CARE_GAP_REVIEW', 
+                                      risk_at_time: 0.1, notes: 'Automated clearance via IoT and Pharmacy data'})
+            
+            MERGE (dc)-[:HAS_CONTEXT]->(dx)
+            MERGE (dc)-[:ABOUT]->(p)
+            MERGE (dc)-[:APPLIED_POLICY]->(pol)
+        """)
 
         # Verify counts
         print("\n=== Verification ===")

@@ -152,6 +152,9 @@ export default function CaseDetailPage() {
       case "OFFER_TRADE_IN": return { badge: "badge-retention", label: "Trade-In Offer", icon: "🔄" };
       case "SCARCITY_ALERT": return { badge: "badge-escalate", label: "Scarcity Alert", icon: "⚡" };
       case "VIP_SHOWROOM_INVITE": return { badge: "badge-documents", label: "VIP Invite", icon: "⭐" };
+      case "TRIGGER_CLINICAL_INTERVENTION": return { badge: "badge-escalate", label: "Clinical Escalation", icon: "🚨" };
+      case "SCHEDULE_FOLLOW_UP": return { badge: "badge-retention", label: "Follow-Up Call", icon: "📞" };
+      case "CLEAR_PATIENT": return { badge: "badge-approve", label: "Clear Patient", icon: "✅" };
       default: return { badge: "", label: action, icon: "?" };
     }
   };
