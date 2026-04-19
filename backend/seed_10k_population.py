@@ -540,6 +540,36 @@ def seed_all():
             CREATE (:Policy {id: 'POL-MAR-01', name: 'High-Intent Financed Abandonment', description: 'Trigger proactive SMS rate lock if user views vehicle 4+ times and checks 72-month financing.', family: 'MarTech'})
         """)
 
+        # ============================================
+        # PHASE 7: HISTORICAL E-COMMERCE COHORTS (Precedents)
+        # ============================================
+        print("Seeding historical ECOM cohorts from seed.cypher...")
+        try:
+            with open('graph/seed.cypher', 'r') as f:
+                content = f.read()
+            header = "// ============================================================\n// E-COMMERCE POPULATION SEED"
+            if header in content:
+                ecom_block = content.split(header)[1]
+                statements = [s.strip() for s in ecom_block.split(';')]
+                success_count = 0
+                for stmt in statements:
+                    if not stmt: continue
+                    clean_lines = [line for line in stmt.split('\n') if not line.strip().startswith('//')]
+                    clean_stmt = '\n'.join(clean_lines).strip()
+                    if clean_stmt:
+                        try:
+                            # Use consume() to execute fully and catch errors without aborting loop
+                            session.run(clean_stmt).consume()
+                            success_count += 1
+                        except Exception as e:
+                            # Ignored (typically "Node already exists" from duplicate Policies)
+                            pass
+                print(f"Successfully loaded {success_count} historical ECOM cohort blocks.")
+            else:
+                print("Could not locate ECOM cohort block in seed.cypher.")
+        except Exception as e:
+            print(f"Failed to load historical ECOM cohorts file: {e}")
+
         # Verify counts
         print("\n=== Verification ===")
         result = session.run("MATCH (n) RETURN labels(n)[0] AS label, count(n) AS cnt ORDER BY cnt DESC")
