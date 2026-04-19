@@ -432,30 +432,49 @@ def seed_all():
             CREATE (diag)-[:TREATMENT_PLAN]->(rx)
         """)
 
-        # E-Commerce Sad Path (High Intent Abandonment)
+        # E-Commerce Sad Path (High Intent Abandonment) — Robert Vance
+        # Full omnichannel graph: Person → Session → Device → BrowsedVehicle → Calculator → PhysicalVisit → Dealership
         session.run("""
-            CREATE (dev:Device {id: 'DEV-ECOM-SAD', ip: '192.168.1.10', type: 'Mobile'})
-            CREATE (sess:Session {id: 'SESS-ECOM-SAD', is_authenticated: false})
-            CREATE (p:Person {id: 'CUST-ECOM-SAD', name: 'John Doe', segment: 'Mass Market'})
-            CREATE (dev)-[:INITIATED]->(sess)
-            CREATE (v1:BrowsedVehicle {vin: 'VIN-SAD-01', make: 'Sedan', price: 28000, model_year: 2026})
-            CREATE (sess)-[:VIEWED]->(v1)
-            CREATE (sess)-[:VIEWED]->(v1)
-            CREATE (sess)-[:VIEWED]->(v1)
-            CREATE (sess)-[:VIEWED]->(v1)
-            CREATE (calc:FinancingCalculator {id: 'CALC-SAD-01', term_months: 72, estimated_apr: 4.5})
-            CREATE (sess)-[:ENGAGED_WITH]->(calc)
-            // No outcome yet, represents abandonment
+            MERGE (pe2:Person {id: 'CUST-ECOM-SAD', name: 'Robert Vance', segment: 'premium',
+              risk_score: 0.1, churn_risk: 0.8, customer_value: 55000,
+              credit_score: 790, months_active: 48, email: 'robert.vance@example.com'})
+
+            MERGE (ctx_ecom:Context {id: 'CTX-ECOM-01', risk_score: 0.1, months_active: 48, inquiries: 0})
+            MERGE (pe2)-[:HAS_CONTEXT]->(ctx_ecom)
+
+            MERGE (v1:BrowsedVehicle {vin: 'VIN-A4-001', make: 'Audi', model: 'A4', year: 2026, price: 42000})
+            MERGE (v2:BrowsedVehicle {vin: 'VIN-Q5-002', make: 'Audi', model: 'Q5', year: 2026, price: 55000})
+
+            MERGE (dlr1:Dealership {id: 'DLR-NY-01', name: 'Central Audi Manhattan', location: 'New York, NY'})
+            MERGE (v1)-[:LOCATED_AT {stock: 2}]->(dlr1)
+            MERGE (v2)-[:LOCATED_AT {stock: 5}]->(dlr1)
+
+            MERGE (sess1:Session {id: 'SESS-ECOM-SAD', is_authenticated: true, start_time: datetime('2026-04-14T14:00:00Z')})
+            MERGE (pe2)-[:INITIATED_SESSION]->(sess1)
+            MERGE (sess1)-[:VIEWED {count: 4, duration_sec: 1200}]->(v1)
+
+            MERGE (dev1:Device {id: 'DEV-IPHONE-15', type: 'Mobile', os: 'iOS'})
+            MERGE (pe2)-[:LOGGED_IN_FROM]->(dev1)
+            MERGE (dev1)-[:INITIATED]->(sess1)
+
+            MERGE (calc1:FinancingCalculator {id: 'CALC-72MO', term_months: 72, interest_rate: 4.99})
+            MERGE (sess1)-[:ENGAGED_WITH]->(calc1)
+
+            MERGE (visit1:PhysicalVisit {id: 'VISIT-NY-001', date: datetime('2026-04-14T15:30:00Z'), duration_min: 90, activity: 'Test Drive'})
+            MERGE (pe2)-[:TOOK_TEST_DRIVE]->(visit1)
+            MERGE (visit1)-[:AT_LOCATION]->(dlr1)
         """)
 
-        # E-Commerce Happy Path (Low Intent)
+        # E-Commerce Happy Path (Low Intent / Purchased) — John Miller
         session.run("""
-            CREATE (dev:Device {id: 'DEV-ECOM-HAPPY', ip: '10.0.5.22', type: 'Desktop'})
-            CREATE (sess:Session {id: 'SESS-ECOM-HAPPY', is_authenticated: false})
-            CREATE (p:Person {id: 'CUST-ECOM-HAPPY', name: 'Jane Smith', segment: 'Affluent'})
-            CREATE (dev)-[:INITIATED]->(sess)
-            CREATE (v1:BrowsedVehicle {vin: 'VIN-HAPPY-01', make: 'Luxury SUV', price: 75000, model_year: 2026})
-            CREATE (sess)-[:VIEWED]->(v1)
+            MERGE (pe1:Person {id: 'CUST-ECOM-HAPPY', name: 'John Miller', segment: 'standard',
+              risk_score: 0.2, churn_risk: 0.1, customer_value: 32000,
+              credit_score: 720, months_active: 24, email: 'john.m@example.com'})
+            MERGE (sess2:Session {id: 'SESS-ECOM-HAPPY', is_authenticated: true})
+            MERGE (pe1)-[:INITIATED_SESSION]->(sess2)
+            MERGE (v2:BrowsedVehicle {vin: 'VIN-Q5-002', make: 'Audi', model: 'Q5', year: 2026, price: 55000})
+            MERGE (sess2)-[:VIEWED]->(v2)
+            MERGE (sess2)-[:PURCHASED {date: datetime('2026-04-10T11:00:00Z')}]->(v2)
         """)
 
         # ============================================
