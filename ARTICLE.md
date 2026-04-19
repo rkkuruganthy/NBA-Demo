@@ -104,11 +104,17 @@ RETURN threat.name, d.ip, d.type
 
 When a shared device is detected, the system auto-generates a SAR filing recommendation with the exact threat actor linkage — something that would take a compliance analyst hours to piece together from traditional logs.
 
-### 🏥 Healthcare — Care Gap Review
+### 🏥 Healthcare — High-Risk Escalation & Alert Fatigue
 
-Graph traversal: `Patient → Encounter → Diagnosis → Prescription → CareGap`
+Graph traversal: `Patient → Context (SDoH) → Session (Intent) → Device (IoT) → Threat (CareGap)`
 
-A 67-year-old patient with Acute MI and a 24-day gap since their last Metoprolol refill? That's a **5-hop traversal** that crosses three data domains (encounters, diagnoses, prescriptions). Policy POL-MED-01 fires: **Urgent outreach at 99% confidence** with a counter-offer to try telehealth before requiring an in-person visit.
+To impress Healthcare VCs and executives, the system explicitly solves two massive ROI-driving problems in the Healthcare/Payer space:
+
+**1. High-Risk Care Gap Prioritization (Preventing ER Admissions)**
+Healthcare systems generate thousands of "Care Gaps" daily. Legacy engines treat every missed prescription equally, causing **Alert Fatigue** for Care Managers. By synthesizing Clinical Data (Heart Failure diagnosis), Behavioral Data (Patient Portal searches for "shortness of breath"), and Social Determinants of Health / SDoH (Transportation deserts), our graph pinpoints the precise subset of patients at *imminent risk of an ER visit*, triggering a `Clinical Escalation`. This drastically reduces the Cost of Care (avoiding $20k+ ER admissions).
+
+**2. Alert Fatigue Suppression (Operational Efficiency)**
+Payers waste millions on automated call centers harassing healthy patients for "non-compliance" simply because a pharmacy claim hasn't cleared. The Context Graph utilizes continuous IoT telemetry (e.g., Apple Watch "Normal Sinus Rhythm") and cross-network pharmacy tracking to deterministically "clear" low-risk patients, safely suppressing the alert and saving massive operational Call Center costs.
 
 ### 🏛️ Insurance Claims — Underwriting & Fraud
 
