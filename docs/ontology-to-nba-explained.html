@@ -1,0 +1,1199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Graph Engineering — Ontology → Knowledge Graph → Context Graph → Next Best Action</title>
+    <meta name="description" content="A visual explainer of Graph Engineering and the four-layer decision intelligence pattern powering the NBA Context Engine.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        /* ─── Reset & Base ─── */
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --bg-primary: #0a0e1a;
+            --bg-secondary: #111827;
+            --bg-card: rgba(17, 24, 39, 0.6);
+            --border-subtle: rgba(255, 255, 255, 0.06);
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+
+            /* Layer colors */
+            --ge: #f472b6;
+            --ge-bg: rgba(244, 114, 182, 0.08);
+            --ge-border: rgba(244, 114, 182, 0.25);
+            --ontology: #818cf8;
+            --ontology-bg: rgba(129, 140, 248, 0.08);
+            --ontology-border: rgba(129, 140, 248, 0.25);
+            --kg: #38bdf8;
+            --kg-bg: rgba(56, 189, 248, 0.08);
+            --kg-border: rgba(56, 189, 248, 0.25);
+            --cg: #fbbf24;
+            --cg-bg: rgba(251, 191, 36, 0.08);
+            --cg-border: rgba(251, 191, 36, 0.25);
+            --nba: #34d399;
+            --nba-bg: rgba(52, 211, 153, 0.08);
+            --nba-border: rgba(52, 211, 153, 0.25);
+            --feedback: #f472b6;
+        }
+
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.7;
+            overflow-x: hidden;
+        }
+
+        /* ─── Ambient Background ─── */
+        .ambient-bg {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
+            overflow: hidden;
+        }
+        .ambient-bg .orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(120px);
+            opacity: 0.15;
+            animation: float 20s ease-in-out infinite;
+        }
+        .ambient-bg .orb:nth-child(1) { width: 600px; height: 600px; background: var(--ge); top: -15%; left: -5%; animation-delay: 0s; }
+        .ambient-bg .orb:nth-child(2) { width: 500px; height: 500px; background: var(--kg); top: 30%; right: -10%; animation-delay: -5s; }
+        .ambient-bg .orb:nth-child(3) { width: 450px; height: 450px; background: var(--cg); bottom: 20%; left: 10%; animation-delay: -10s; }
+        .ambient-bg .orb:nth-child(4) { width: 550px; height: 550px; background: var(--nba); bottom: -5%; right: 15%; animation-delay: -15s; }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            33% { transform: translate(30px, -20px) scale(1.05); }
+            66% { transform: translate(-20px, 15px) scale(0.95); }
+        }
+
+        /* ─── Layout ─── */
+        .container {
+            position: relative;
+            z-index: 1;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        /* ─── Hero ─── */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 4rem 2rem;
+        }
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1.25rem;
+            border-radius: 100px;
+            background: var(--ge-bg);
+            border: 1px solid var(--ge-border);
+            color: var(--ge);
+            font-size: 0.8rem;
+            font-weight: 600;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            margin-bottom: 2rem;
+            animation: fadeInDown 0.8s ease;
+        }
+        .hero h1 {
+            font-size: clamp(2.5rem, 6vw, 4.5rem);
+            font-weight: 900;
+            line-height: 1.1;
+            letter-spacing: -0.03em;
+            margin-bottom: 1.5rem;
+            animation: fadeInUp 0.8s ease 0.1s both;
+        }
+        .hero h1 .gradient-text {
+            background: linear-gradient(135deg, var(--ge), var(--ontology), var(--kg), var(--cg), var(--nba));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .hero p {
+            font-size: 1.2rem;
+            color: var(--text-secondary);
+            max-width: 700px;
+            margin-bottom: 3rem;
+            animation: fadeInUp 0.8s ease 0.2s both;
+        }
+        .hero-scroll {
+            animation: fadeInUp 0.8s ease 0.3s both;
+        }
+        .hero-scroll a {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: color 0.3s;
+        }
+        .hero-scroll a:hover { color: var(--text-primary); }
+        .hero-scroll .arrow {
+            display: inline-block;
+            animation: bounce 2s ease-in-out infinite;
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(6px); }
+        }
+
+        /* ─── Section Headings ─── */
+        .section-label {
+            text-align: center;
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            margin-bottom: 1rem;
+        }
+        .section-heading {
+            text-align: center;
+            font-size: 2.5rem;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            margin-bottom: 1rem;
+        }
+        .section-subtitle {
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            max-width: 700px;
+            margin: 0 auto 4rem;
+        }
+
+        /* ═══════════════════════════════════════════ */
+        /* GRAPH ENGINEERING OVERVIEW SECTION         */
+        /* ═══════════════════════════════════════════ */
+
+        .ge-overview-section {
+            padding: 6rem 0;
+        }
+
+        .ge-wrapper-diagram {
+            position: relative;
+            border: 2px solid var(--ge-border);
+            border-radius: 28px;
+            padding: 3rem 2.5rem 2.5rem;
+            background: rgba(244, 114, 182, 0.02);
+            margin-bottom: 3rem;
+        }
+        .ge-wrapper-label {
+            position: absolute;
+            top: -14px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--bg-primary);
+            padding: 0.25rem 1.5rem;
+            font-size: 0.8rem;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--ge);
+            border: 2px solid var(--ge-border);
+            border-radius: 100px;
+            white-space: nowrap;
+        }
+
+        .ge-inner-flow {
+            display: flex;
+            align-items: stretch;
+            gap: 0;
+        }
+
+        .ge-flow-step {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.6s ease, transform 0.6s ease;
+        }
+        .ge-flow-step.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .ge-flow-icon {
+            width: 72px;
+            height: 72px;
+            border-radius: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+            margin-bottom: 0.75rem;
+            transition: transform 0.3s ease;
+        }
+        .ge-flow-step:hover .ge-flow-icon { transform: scale(1.1) translateY(-3px); }
+
+        .ge-flow-step:nth-child(1) .ge-flow-icon { background: var(--ontology-bg); border: 2px solid var(--ontology-border); box-shadow: 0 0 24px rgba(129, 140, 248, 0.12); }
+        .ge-flow-step:nth-child(2) .ge-flow-icon { background: var(--kg-bg); border: 2px solid var(--kg-border); box-shadow: 0 0 24px rgba(56, 189, 248, 0.12); }
+        .ge-flow-step:nth-child(3) .ge-flow-icon { background: var(--cg-bg); border: 2px solid var(--cg-border); box-shadow: 0 0 24px rgba(251, 191, 36, 0.12); }
+        .ge-flow-step:nth-child(4) .ge-flow-icon { background: var(--nba-bg); border: 2px solid var(--nba-border); box-shadow: 0 0 24px rgba(52, 211, 153, 0.12); }
+
+        .ge-flow-step h3 { font-size: 0.95rem; font-weight: 700; margin-bottom: 0.25rem; }
+        .ge-flow-step:nth-child(1) h3 { color: var(--ontology); }
+        .ge-flow-step:nth-child(2) h3 { color: var(--kg); }
+        .ge-flow-step:nth-child(3) h3 { color: var(--cg); }
+        .ge-flow-step:nth-child(4) h3 { color: var(--nba); }
+
+        .ge-flow-step .subtitle {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+
+        .ge-arrow {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 50px;
+            flex-shrink: 0;
+            padding-bottom: 2rem;
+            opacity: 0;
+            transition: opacity 0.6s ease 0.3s;
+        }
+        .ge-arrow.visible { opacity: 1; }
+        .ge-arrow svg { width: 36px; height: 18px; }
+        .ge-arrow svg path {
+            stroke: var(--text-muted);
+            stroke-width: 2;
+            fill: none;
+            stroke-dasharray: 6 4;
+            animation: dash 1.5s linear infinite;
+        }
+        @keyframes dash { to { stroke-dashoffset: -20; } }
+
+        /* GE Practices Row */
+        .ge-practices {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 0.75rem;
+            margin-top: 1.5rem;
+        }
+        .ge-practice {
+            padding: 0.8rem 1rem;
+            border-radius: 12px;
+            background: var(--ge-bg);
+            border: 1px solid var(--ge-border);
+            text-align: center;
+        }
+        .ge-practice .practice-icon { font-size: 1.1rem; margin-bottom: 0.3rem; }
+        .ge-practice .practice-label {
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: var(--ge);
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+        }
+
+        /* Feedback loop arrow under wrapper */
+        .ge-feedback-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: 1rem;
+        }
+        .ge-feedback-line {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            height: 50px;
+        }
+        .ge-feedback-line svg {
+            width: 100%;
+            height: 100%;
+        }
+        .ge-feedback-line svg path {
+            stroke: var(--feedback);
+            stroke-width: 2;
+            fill: none;
+            stroke-dasharray: 8 4;
+            animation: dash 2s linear infinite;
+            opacity: 0.5;
+        }
+        .ge-feedback-label {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(244, 114, 182, 0.08);
+            border: 1px solid rgba(244, 114, 182, 0.25);
+            padding: 0.35rem 1rem;
+            border-radius: 100px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: var(--feedback);
+            white-space: nowrap;
+        }
+
+        /* ═══════════════════════════════════════════ */
+        /* GRAPH ENGINEERING DEEP DIVE CARD           */
+        /* ═══════════════════════════════════════════ */
+
+        .ge-explainer-section {
+            padding: 2rem 0 6rem;
+        }
+
+        .ge-card {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 3rem;
+            padding: 3rem;
+            border-radius: 24px;
+            background: var(--bg-card);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--ge-border);
+            border-left: 3px solid var(--ge);
+            opacity: 0;
+            transform: translateY(40px);
+            transition: opacity 0.7s ease, transform 0.7s ease;
+        }
+        .ge-card.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .ge-card-left .layer-number { color: var(--ge); font-size: 0.7rem; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 0.75rem; }
+        .ge-card-left h3 { font-size: 1.75rem; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 0.5rem; }
+        .ge-card-left .analogy { font-size: 1rem; color: var(--text-secondary); margin-bottom: 1.5rem; padding-bottom: 1.5rem; border-bottom: 1px solid var(--border-subtle); }
+        .ge-card-left .meta-item { display: flex; gap: 0.75rem; margin-bottom: 1rem; }
+        .ge-card-left .meta-icon { width: 28px; height: 28px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; flex-shrink: 0; margin-top: 2px; background: var(--ge-bg); }
+        .ge-card-left .meta-label { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-muted); margin-bottom: 0.15rem; }
+        .ge-card-left .meta-value { font-size: 0.9rem; color: var(--text-secondary); line-height: 1.5; }
+
+        .ge-card-right h4 { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.75rem; }
+
+        .ge-pillar-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+        }
+        .ge-pillar {
+            padding: 1rem;
+            border-radius: 14px;
+            background: rgba(0,0,0,0.3);
+            border: 1px solid var(--border-subtle);
+            transition: border-color 0.3s;
+        }
+        .ge-pillar:hover { border-color: var(--ge-border); }
+        .ge-pillar .pillar-emoji { font-size: 1.3rem; margin-bottom: 0.4rem; }
+        .ge-pillar .pillar-title { font-size: 0.8rem; font-weight: 700; color: var(--ge); margin-bottom: 0.2rem; }
+        .ge-pillar .pillar-desc { font-size: 0.75rem; color: var(--text-muted); line-height: 1.5; }
+
+        .ge-outcome-box {
+            padding: 1rem 1.25rem;
+            border-radius: 12px;
+            font-size: 0.95rem;
+            font-weight: 500;
+            line-height: 1.6;
+            background: var(--ge-bg);
+            border: 1px solid var(--ge-border);
+            color: var(--ge);
+        }
+
+        /* ═══════════════════════════════════════════ */
+        /* LAYER DEEP-DIVE CARDS (existing pattern)  */
+        /* ═══════════════════════════════════════════ */
+
+        .layers-section {
+            padding: 4rem 0 8rem;
+        }
+
+        .layer-card {
+            display: grid;
+            grid-template-columns: 340px 1fr;
+            gap: 3rem;
+            padding: 3rem;
+            border-radius: 24px;
+            margin-bottom: 3rem;
+            background: var(--bg-card);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--border-subtle);
+            opacity: 0;
+            transform: translateY(40px);
+            transition: opacity 0.7s ease, transform 0.7s ease;
+        }
+        .layer-card.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .layer-card:nth-child(1) { border-left: 3px solid var(--ontology); }
+        .layer-card:nth-child(2) { border-left: 3px solid var(--kg); }
+        .layer-card:nth-child(3) { border-left: 3px solid var(--cg); }
+        .layer-card:nth-child(4) { border-left: 3px solid var(--nba); }
+
+        .layer-left { display: flex; flex-direction: column; }
+
+        .layer-number {
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            margin-bottom: 0.75rem;
+        }
+        .layer-card:nth-child(1) .layer-number { color: var(--ontology); }
+        .layer-card:nth-child(2) .layer-number { color: var(--kg); }
+        .layer-card:nth-child(3) .layer-number { color: var(--cg); }
+        .layer-card:nth-child(4) .layer-number { color: var(--nba); }
+
+        .layer-left h3 { font-size: 1.75rem; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 0.5rem; }
+        .layer-left .analogy { font-size: 1rem; color: var(--text-secondary); margin-bottom: 1.5rem; padding-bottom: 1.5rem; border-bottom: 1px solid var(--border-subtle); }
+
+        .layer-meta { display: flex; flex-direction: column; gap: 1rem; }
+        .layer-meta-item { display: flex; gap: 0.75rem; }
+        .layer-meta-icon {
+            width: 28px; height: 28px; border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.85rem; flex-shrink: 0; margin-top: 2px;
+        }
+        .layer-card:nth-child(1) .layer-meta-icon { background: var(--ontology-bg); }
+        .layer-card:nth-child(2) .layer-meta-icon { background: var(--kg-bg); }
+        .layer-card:nth-child(3) .layer-meta-icon { background: var(--cg-bg); }
+        .layer-card:nth-child(4) .layer-meta-icon { background: var(--nba-bg); }
+
+        .layer-meta-item .label { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-muted); margin-bottom: 0.15rem; }
+        .layer-meta-item .value { font-size: 0.9rem; color: var(--text-secondary); line-height: 1.5; }
+
+        .layer-right { display: flex; flex-direction: column; gap: 1.5rem; }
+        .layer-right h4 { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.5rem; }
+
+        .example-box {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 14px;
+            padding: 1.5rem;
+            border: 1px solid var(--border-subtle);
+        }
+        .tag-row { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+        .tag {
+            display: inline-block; padding: 0.3rem 0.7rem; border-radius: 6px;
+            font-size: 0.75rem; font-family: 'JetBrains Mono', monospace; font-weight: 500;
+        }
+        .layer-card:nth-child(1) .tag { background: var(--ontology-bg); color: var(--ontology); border: 1px solid var(--ontology-border); }
+        .layer-card:nth-child(2) .tag { background: var(--kg-bg); color: var(--kg); border: 1px solid var(--kg-border); }
+        .layer-card:nth-child(3) .tag { background: var(--cg-bg); color: var(--cg); border: 1px solid var(--cg-border); }
+        .layer-card:nth-child(4) .tag { background: var(--nba-bg); color: var(--nba); border: 1px solid var(--nba-border); }
+
+        .graph-path {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            padding: 0.75rem 1rem;
+            background: rgba(0,0,0,0.3);
+            border-radius: 8px;
+            border-left: 3px solid;
+            margin-bottom: 0.5rem;
+            line-height: 1.6;
+        }
+        .layer-card:nth-child(3) .graph-path { border-left-color: var(--cg); }
+
+        .outcome-box {
+            padding: 1rem 1.25rem;
+            border-radius: 12px;
+            font-size: 0.95rem;
+            font-weight: 500;
+            line-height: 1.6;
+        }
+        .layer-card:nth-child(1) .outcome-box { background: var(--ontology-bg); border: 1px solid var(--ontology-border); color: var(--ontology); }
+        .layer-card:nth-child(2) .outcome-box { background: var(--kg-bg); border: 1px solid var(--kg-border); color: var(--kg); }
+        .layer-card:nth-child(3) .outcome-box { background: var(--cg-bg); border: 1px solid var(--cg-border); color: var(--cg); }
+        .layer-card:nth-child(4) .outcome-box { background: var(--nba-bg); border: 1px solid var(--nba-border); color: var(--nba); }
+
+        /* ═══════════════════════════════════════════ */
+        /* LIVE EXAMPLE TIMELINE                      */
+        /* ═══════════════════════════════════════════ */
+
+        .example-section { padding: 6rem 0; }
+
+        .example-timeline {
+            position: relative;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .example-timeline::before {
+            content: '';
+            position: absolute;
+            left: 28px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: linear-gradient(to bottom, var(--ge), var(--ontology), var(--kg), var(--cg), var(--nba));
+            border-radius: 2px;
+        }
+
+        .timeline-step {
+            display: flex;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+            position: relative;
+            opacity: 0;
+            transform: translateX(-20px);
+            transition: opacity 0.5s ease, transform 0.5s ease;
+        }
+        .timeline-step.visible { opacity: 1; transform: translateX(0); }
+
+        .timeline-dot {
+            width: 56px; height: 56px; border-radius: 14px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.3rem; flex-shrink: 0; z-index: 2;
+        }
+        .timeline-step:nth-child(1) .timeline-dot { background: var(--ge-bg); border: 2px solid var(--ge-border); }
+        .timeline-step:nth-child(2) .timeline-dot { background: var(--ontology-bg); border: 2px solid var(--ontology-border); }
+        .timeline-step:nth-child(3) .timeline-dot { background: var(--kg-bg); border: 2px solid var(--kg-border); }
+        .timeline-step:nth-child(4) .timeline-dot { background: var(--cg-bg); border: 2px solid var(--cg-border); }
+        .timeline-step:nth-child(5) .timeline-dot { background: var(--nba-bg); border: 2px solid var(--nba-border); }
+
+        .timeline-content {
+            flex: 1;
+            background: var(--bg-card);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border-subtle);
+            border-radius: 16px;
+            padding: 1.5rem;
+        }
+        .timeline-content h4 { font-size: 1rem; font-weight: 700; margin-bottom: 0.5rem; }
+        .timeline-step:nth-child(1) .timeline-content h4 { color: var(--ge); }
+        .timeline-step:nth-child(2) .timeline-content h4 { color: var(--ontology); }
+        .timeline-step:nth-child(3) .timeline-content h4 { color: var(--kg); }
+        .timeline-step:nth-child(4) .timeline-content h4 { color: var(--cg); }
+        .timeline-step:nth-child(5) .timeline-content h4 { color: var(--nba); }
+
+        .timeline-content p { font-size: 0.9rem; color: var(--text-secondary); line-height: 1.6; }
+        .timeline-content .mono {
+            font-family: 'JetBrains Mono', monospace; font-size: 0.8rem;
+            background: rgba(0,0,0,0.3); padding: 0.75rem 1rem; border-radius: 8px;
+            margin-top: 0.75rem; color: var(--text-secondary); line-height: 1.7;
+        }
+        .timeline-content .highlight { font-weight: 700; }
+        .timeline-step:nth-child(1) .highlight { color: var(--ge); }
+        .timeline-step:nth-child(2) .highlight { color: var(--ontology); }
+        .timeline-step:nth-child(3) .highlight { color: var(--kg); }
+        .timeline-step:nth-child(4) .highlight { color: var(--cg); }
+        .timeline-step:nth-child(5) .highlight { color: var(--nba); }
+
+        .result-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            border-radius: 10px;
+            margin-top: 0.75rem;
+            font-size: 0.85rem;
+            font-weight: 700;
+        }
+
+        /* ═══════════════════════════════════════════ */
+        /* SUMMARY TABLE                              */
+        /* ═══════════════════════════════════════════ */
+
+        .summary-section { padding: 6rem 0 8rem; }
+
+        .summary-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            border-radius: 16px;
+            overflow: hidden;
+            background: var(--bg-card);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border-subtle);
+        }
+        .summary-table thead th {
+            padding: 1rem 1.5rem;
+            font-size: 0.7rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
+            color: var(--text-muted); text-align: left;
+            background: rgba(0,0,0,0.3);
+            border-bottom: 1px solid var(--border-subtle);
+        }
+        .summary-table tbody td {
+            padding: 1.25rem 1.5rem;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            border-bottom: 1px solid var(--border-subtle);
+            vertical-align: top;
+        }
+        .summary-table tbody tr:last-child td { border-bottom: none; }
+        .summary-table tbody td:first-child { font-weight: 700; font-size: 0.95rem; }
+        .summary-table tbody tr:nth-child(1) td:first-child { color: var(--ge); }
+        .summary-table tbody tr:nth-child(2) td:first-child { color: var(--ontology); }
+        .summary-table tbody tr:nth-child(3) td:first-child { color: var(--kg); }
+        .summary-table tbody tr:nth-child(4) td:first-child { color: var(--cg); }
+        .summary-table tbody tr:nth-child(5) td:first-child { color: var(--nba); }
+
+        /* ─── Footer ─── */
+        .footer {
+            text-align: center;
+            padding: 3rem 2rem;
+            border-top: 1px solid var(--border-subtle);
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+        .footer strong { color: var(--text-secondary); }
+
+        /* ─── Responsive ─── */
+        @media (max-width: 900px) {
+            .ge-inner-flow { flex-direction: column; align-items: center; gap: 0.5rem; }
+            .ge-arrow { transform: rotate(90deg); width: auto; padding: 0; }
+            .ge-practices { grid-template-columns: repeat(2, 1fr); }
+            .ge-card { grid-template-columns: 1fr; }
+            .ge-pillar-grid { grid-template-columns: 1fr; }
+            .layer-card { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Ambient Background -->
+<div class="ambient-bg">
+    <div class="orb"></div>
+    <div class="orb"></div>
+    <div class="orb"></div>
+    <div class="orb"></div>
+</div>
+
+<!-- ═══════════════ HERO ═══════════════ -->
+<section class="hero">
+    <div class="hero-badge">⚙️ The Emerging Discipline</div>
+    <h1>
+        <span class="gradient-text">Graph Engineering</span>
+    </h1>
+    <p>
+        The engineering discipline that designs, builds, and operates graph-powered decision systems.
+        Four layers — Ontology, Knowledge Graph, Context Graph, and Next Best Action — are <em>what</em> you build. Graph Engineering is <em>how</em> you build it.
+    </p>
+    <div class="hero-scroll">
+        <a href="#overview">
+            See how it all fits together <span class="arrow">↓</span>
+        </a>
+    </div>
+</section>
+
+<!-- ═══════════════ GRAPH ENGINEERING OVERVIEW ═══════════════ -->
+<section class="ge-overview-section" id="overview">
+    <div class="container">
+        <div class="section-label">The Architecture</div>
+        <h2 class="section-heading">Graph Engineering Wraps the Entire Pipeline</h2>
+        <p class="section-subtitle">Graph Engineering isn't a separate layer — it's the discipline that makes all four layers work. It spans data modeling, graph construction, query optimization, and decision orchestration.</p>
+
+        <!-- Wrapper diagram with GE border -->
+        <div class="ge-wrapper-diagram">
+            <div class="ge-wrapper-label">⚙️ Graph Engineering</div>
+
+            <div class="ge-inner-flow">
+                <div class="ge-flow-step" data-reveal>
+                    <div class="ge-flow-icon">🧬</div>
+                    <h3>Ontology</h3>
+                    <div class="subtitle">Define the vocabulary</div>
+                </div>
+                <div class="ge-arrow" data-reveal>
+                    <svg viewBox="0 0 36 18"><path d="M0,9 L26,9 M22,4 L26,9 L22,14"/></svg>
+                </div>
+                <div class="ge-flow-step" data-reveal>
+                    <div class="ge-flow-icon">🗄️</div>
+                    <h3>Knowledge Graph</h3>
+                    <div class="subtitle">Store the facts</div>
+                </div>
+                <div class="ge-arrow" data-reveal>
+                    <svg viewBox="0 0 36 18"><path d="M0,9 L26,9 M22,4 L26,9 L22,14"/></svg>
+                </div>
+                <div class="ge-flow-step" data-reveal>
+                    <div class="ge-flow-icon">🔍</div>
+                    <h3>Context Graph</h3>
+                    <div class="subtitle">Focus on what matters</div>
+                </div>
+                <div class="ge-arrow" data-reveal>
+                    <svg viewBox="0 0 36 18"><path d="M0,9 L26,9 M22,4 L26,9 L22,14"/></svg>
+                </div>
+                <div class="ge-flow-step" data-reveal>
+                    <div class="ge-flow-icon">🎯</div>
+                    <h3>Next Best Action</h3>
+                    <div class="subtitle">Decide &amp; act</div>
+                </div>
+            </div>
+
+            <!-- GE Practices row -->
+            <div class="ge-practices">
+                <div class="ge-practice">
+                    <div class="practice-icon">📐</div>
+                    <div class="practice-label">Data Modeling</div>
+                </div>
+                <div class="ge-practice">
+                    <div class="practice-icon">🔧</div>
+                    <div class="practice-label">Graph Construction</div>
+                </div>
+                <div class="ge-practice">
+                    <div class="practice-icon">⚡</div>
+                    <div class="practice-label">Query Engineering</div>
+                </div>
+                <div class="ge-practice">
+                    <div class="practice-icon">🔄</div>
+                    <div class="practice-label">Decision Orchestration</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Feedback loop -->
+        <div class="ge-feedback-row">
+            <div class="ge-feedback-line">
+                <svg viewBox="0 0 600 50" preserveAspectRatio="none">
+                    <path d="M540,5 C580,5 590,25 590,25 C590,25 580,45 540,45 L60,45 C20,45 10,25 10,25 C10,25 20,5 60,5"/>
+                </svg>
+                <div class="ge-feedback-label">🔄 Decisions persist back → Graph grows smarter</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ═══════════════ GRAPH ENGINEERING DEEP DIVE ═══════════════ -->
+<section class="ge-explainer-section">
+    <div class="container">
+        <div class="ge-card" data-reveal>
+            <div class="ge-card-left">
+                <div class="layer-number">The Discipline</div>
+                <h3>⚙️ Graph Engineering</h3>
+                <div class="analogy">The practice of designing, building, and operating graph-powered systems at enterprise scale</div>
+
+                <div class="meta-item">
+                    <div class="meta-icon">📖</div>
+                    <div>
+                        <div class="meta-label">What is it</div>
+                        <div class="meta-value">The <strong>engineering discipline</strong> that spans the entire graph pipeline — from modeling the domain ontology, to constructing and indexing the knowledge graph, to optimizing Cypher queries for context extraction, to orchestrating deterministic decision logic. It's not a layer you add; it's the <em>craft</em> that makes every layer work.</div>
+                    </div>
+                </div>
+                <div class="meta-item">
+                    <div class="meta-icon">❓</div>
+                    <div>
+                        <div class="meta-label">Why it matters now</div>
+                        <div class="meta-value">2026 is the <strong>"Accountability Era"</strong> for graph technologies. With GraphRAG, agentic AI, and enterprise knowledge graphs going mainstream, organizations need engineers who don't just query graphs — they <em>architect</em> them for performance, governance, explainability, and AI-readiness.</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="ge-card-right">
+                <h4>The Four Pillars of Graph Engineering</h4>
+                <div class="ge-pillar-grid">
+                    <div class="ge-pillar">
+                        <div class="pillar-emoji">📐</div>
+                        <div class="pillar-title">Graph Data Modeling</div>
+                        <div class="pillar-desc">Designing the ontology — node labels, relationship types, property schemas, constraints. Getting this wrong means every downstream query is fragile.</div>
+                    </div>
+                    <div class="ge-pillar">
+                        <div class="pillar-emoji">🔧</div>
+                        <div class="pillar-title">Graph Construction</div>
+                        <div class="pillar-desc">ETL pipelines, entity resolution, seeding, indexing, and validation gates. The "soul-crushing" work of building a clean, production-quality graph.</div>
+                    </div>
+                    <div class="ge-pillar">
+                        <div class="pillar-emoji">⚡</div>
+                        <div class="pillar-title">Query & Feature Engineering</div>
+                        <div class="pillar-desc">Writing and optimizing Cypher traversals to extract features from graph topology — the context graph extractors that power real-time decisions.</div>
+                    </div>
+                    <div class="ge-pillar">
+                        <div class="pillar-emoji">🔄</div>
+                        <div class="pillar-title">Decision Orchestration</div>
+                        <div class="pillar-desc">Wiring graph outputs to deterministic rules, confidence blending, precedent matching, and persisting decisions back to enrich the graph.</div>
+                    </div>
+                </div>
+
+                <div class="ge-outcome-box">
+                    <strong>→ Outcome:</strong> An engineering practice that transforms a graph database from a data store into a <strong>decision intelligence platform</strong> — scalable, auditable, and AI-ready.
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ═══════════════ LAYER DEEP DIVES ═══════════════ -->
+<section class="layers-section" id="layers">
+    <div class="container">
+        <div class="section-label">The Four Layers</div>
+        <h2 class="section-heading">What Graph Engineering Builds</h2>
+        <p class="section-subtitle">Each layer feeds the next. Together, they form the architecture of a graph-powered decision system.</p>
+
+        <!-- ONTOLOGY -->
+        <div class="layer-card" data-reveal>
+            <div class="layer-left">
+                <div class="layer-number">Layer 01</div>
+                <h3>🧬 Ontology</h3>
+                <div class="analogy">The blueprint — before a single record is stored</div>
+                <div class="layer-meta">
+                    <div class="layer-meta-item">
+                        <div class="layer-meta-icon">📖</div>
+                        <div>
+                            <div class="label">What is it</div>
+                            <div class="value">A formal definition of every <strong>entity type</strong> (Person, Account, Device, Policy…) and every <strong>relationship type</strong> (OWNS, VIEWED, FILED_CLAIM…) that can exist in your domain.</div>
+                        </div>
+                    </div>
+                    <div class="layer-meta-item">
+                        <div class="layer-meta-icon">❓</div>
+                        <div>
+                            <div class="label">Why it matters</div>
+                            <div class="value">Without it, data is noise. The ontology ensures engineering, business, and compliance all describe the same world the same way.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="layer-right">
+                <div>
+                    <h4>In the NBA Demo</h4>
+                    <div class="example-box">
+                        <div class="tag-row" style="margin-bottom: 0.75rem;">
+                            <span class="tag">Person</span>
+                            <span class="tag">Account</span>
+                            <span class="tag">Device</span>
+                            <span class="tag">Session</span>
+                            <span class="tag">Policy</span>
+                            <span class="tag">Decision</span>
+                            <span class="tag">Claim</span>
+                            <span class="tag">Diagnosis</span>
+                            <span class="tag">Dealership</span>
+                        </div>
+                        <div class="tag-row">
+                            <span class="tag">OWNS →</span>
+                            <span class="tag">VIEWED →</span>
+                            <span class="tag">FILED_CLAIM →</span>
+                            <span class="tag">TOOK_TEST_DRIVE →</span>
+                            <span class="tag">APPLIED_POLICY →</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="outcome-box">
+                    <strong>→ Outcome:</strong> A shared blueprint that defines what can exist — the foundation everything else is built on.
+                </div>
+            </div>
+        </div>
+
+        <!-- KNOWLEDGE GRAPH -->
+        <div class="layer-card" data-reveal>
+            <div class="layer-left">
+                <div class="layer-number">Layer 02</div>
+                <h3>🗄️ Knowledge Graph</h3>
+                <div class="analogy">The facts — the ontology filled with real data</div>
+                <div class="layer-meta">
+                    <div class="layer-meta-item">
+                        <div class="layer-meta-icon">📖</div>
+                        <div>
+                            <div class="label">What is it</div>
+                            <div class="value">Real people, real accounts, real transactions — all stored as <strong>connected nodes and edges</strong> in Neo4j. Decisions are stored back, so the graph <strong>grows smarter over time</strong>.</div>
+                        </div>
+                    </div>
+                    <div class="layer-meta-item">
+                        <div class="layer-meta-icon">❓</div>
+                        <div>
+                            <div class="label">Why it matters</div>
+                            <div class="value">Relationships are <strong>first-class citizens</strong>, not buried in JOIN tables. Questions like "who shares a device with a fraudster?" are a single traversal, not a 4-table join.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="layer-right">
+                <div>
+                    <h4>In the NBA Demo</h4>
+                    <div class="example-box">
+                        <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                            <div>
+                                <div style="font-size:2rem; margin-bottom:0.3rem;">56,308+</div>
+                                <div style="font-size:0.8rem; color:var(--text-muted);">Connected Nodes</div>
+                            </div>
+                            <div>
+                                <div style="font-size:2rem; margin-bottom:0.3rem;">10,006</div>
+                                <div style="font-size:0.8rem; color:var(--text-muted);">Users Across 5 Industries</div>
+                            </div>
+                            <div>
+                                <div style="font-size:2rem; margin-bottom:0.3rem;">17+</div>
+                                <div style="font-size:0.8rem; color:var(--text-muted);">Policy Rules as Nodes</div>
+                            </div>
+                            <div>
+                                <div style="font-size:2rem; margin-bottom:0.3rem;">∞</div>
+                                <div style="font-size:0.8rem; color:var(--text-muted);">Decisions (grows over time)</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="outcome-box">
+                    <strong>→ Outcome:</strong> A unified, growing source of truth where every decision enriches the graph for the next one.
+                </div>
+            </div>
+        </div>
+
+        <!-- CONTEXT GRAPH -->
+        <div class="layer-card" data-reveal>
+            <div class="layer-left">
+                <div class="layer-number">Layer 03</div>
+                <h3>🔍 Context Graph</h3>
+                <div class="analogy">The focus — only what matters for this decision</div>
+                <div class="layer-meta">
+                    <div class="layer-meta-item">
+                        <div class="layer-meta-icon">📖</div>
+                        <div>
+                            <div class="label">What is it</div>
+                            <div class="value">A <strong>focused subgraph</strong> extracted at the moment of decision. Out of 56K nodes, Cypher traversals pull the 15–30 relevant to <em>this customer</em> and <em>this event</em>, transforming topology into <strong>measurable features</strong>.</div>
+                        </div>
+                    </div>
+                    <div class="layer-meta-item">
+                        <div class="layer-meta-icon">❓</div>
+                        <div>
+                            <div class="label">Why it matters</div>
+                            <div class="value">This is where the audit trail lives. It preserves the <strong>exact state of the world</strong> at decision time — three weeks later, you can see exactly what data the engine saw.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="layer-right">
+                <div>
+                    <h4>Graph Paths Traversed (5 verticals)</h4>
+                    <div class="graph-path">
+                        💳 <strong>Financial:</strong> Person → Account → Transaction → Entity<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;→ utilization, DPD, credit_score, travel_intent
+                    </div>
+                    <div class="graph-path">
+                        🚨 <strong>AML:</strong> Person → Device ← Fraudster · Account → Transaction → Destination<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;→ shared_with_threat, jurisdiction, wire_amount
+                    </div>
+                    <div class="graph-path">
+                        🏥 <strong>Healthcare:</strong> Patient → Encounter → Diagnosis → Rx → CareGap<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;→ care_gap_days, is_critical, rx_status
+                    </div>
+                    <div class="graph-path">
+                        🛡️ <strong>Insurance:</strong> Person → Claim → Provider · Claim → PreAuth<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;→ is_duplicate, provider_risk, has_preauth
+                    </div>
+                    <div class="graph-path">
+                        🛒 <strong>E-Commerce:</strong> Session → Vehicle · Person → PhysicalVisit → Dealership<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;→ view_count, used_calculator, test_drive_count
+                    </div>
+                </div>
+                <div class="outcome-box">
+                    <strong>→ Outcome:</strong> Precise, actionable features extracted from real graph relationships — plus a frozen snapshot for auditing.
+                </div>
+            </div>
+        </div>
+
+        <!-- NEXT BEST ACTION -->
+        <div class="layer-card" data-reveal>
+            <div class="layer-left">
+                <div class="layer-number">Layer 04</div>
+                <h3>🎯 Next Best Action</h3>
+                <div class="analogy">The decision — rules applied, action recommended</div>
+                <div class="layer-meta">
+                    <div class="layer-meta-item">
+                        <div class="layer-meta-icon">📖</div>
+                        <div>
+                            <div class="label">What is it</div>
+                            <div class="value"><strong>Deterministic rules</strong> applied to context graph features, producing: a recommended action, confidence score, ranked alternatives, counter-offers, and a plain-English narrative. The LLM <strong>never</strong> decides — it only explains.</div>
+                        </div>
+                    </div>
+                    <div class="layer-meta-item">
+                        <div class="layer-meta-icon">❓</div>
+                        <div>
+                            <div class="label">Why it matters</div>
+                            <div class="value">Every decision is <strong>traceable</strong> (links to policies + context), <strong>negotiable</strong> (counter-offers), and <strong>persistent</strong> — written back into the graph, completing the feedback loop.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="layer-right">
+                <div>
+                    <h4>What the engine produces</h4>
+                    <div class="example-box">
+                        <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                            <div>
+                                <div class="tag" style="margin-bottom:0.4rem;">Recommended Action</div>
+                                <div style="font-size:0.85rem; color:var(--text-secondary);">Approve · Decline · Escalate · SMS Offer · Trade-In</div>
+                            </div>
+                            <div>
+                                <div class="tag" style="margin-bottom:0.4rem;">Confidence Score</div>
+                                <div style="font-size:0.85rem; color:var(--text-secondary);">70% rules + 30% population blend</div>
+                            </div>
+                            <div>
+                                <div class="tag" style="margin-bottom:0.4rem;">Ranked Alternatives</div>
+                                <div style="font-size:0.85rem; color:var(--text-secondary);">2–4 options with revenue impact</div>
+                            </div>
+                            <div>
+                                <div class="tag" style="margin-bottom:0.4rem;">AI Narrative</div>
+                                <div style="font-size:0.85rem; color:var(--text-secondary);">LLM translates — never decides</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="outcome-box">
+                    <strong>→ Outcome:</strong> A justified, auditable action that enriches the graph and completes the feedback loop.
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ═══════════════ LIVE EXAMPLE ═══════════════ -->
+<section class="example-section" id="example">
+    <div class="container">
+        <div class="section-label">Live Example</div>
+        <h2 class="section-heading">Robert Vance — "The Sad User"</h2>
+        <p class="section-subtitle">A customer who browsed, calculated financing, test-drove a car… but never bought. Watch all five concepts in action.</p>
+
+        <div class="example-timeline">
+            <!-- Step 0: Graph Engineering -->
+            <div class="timeline-step" data-reveal>
+                <div class="timeline-dot">⚙️</div>
+                <div class="timeline-content">
+                    <h4>Graph Engineering designed the system</h4>
+                    <p>A graph engineer <span class="highlight">modeled</span> the omnichannel domain (web sessions, mobile engagement, physical visits), <span class="highlight">built</span> Cypher extractors for each channel, <span class="highlight">optimized</span> indexes for sub-second traversal, and <span class="highlight">orchestrated</span> the decision pipeline to persist every action back into Neo4j.</p>
+                </div>
+            </div>
+            <!-- Step 1: Ontology -->
+            <div class="timeline-step" data-reveal>
+                <div class="timeline-dot">🧬</div>
+                <div class="timeline-content">
+                    <h4>Ontology defines the entities</h4>
+                    <p>The system knows that a <span class="highlight">Person</span> can <span class="highlight">INITIATE</span> a <span class="highlight">Session</span>, <span class="highlight">VIEW</span> a <span class="highlight">BrowsedVehicle</span>, <span class="highlight">ENGAGE_WITH</span> a <span class="highlight">FinancingCalculator</span>, and <span class="highlight">TAKE_TEST_DRIVE</span> at a <span class="highlight">Dealership</span>.</p>
+                </div>
+            </div>
+            <!-- Step 2: KG -->
+            <div class="timeline-step" data-reveal>
+                <div class="timeline-dot">🗄️</div>
+                <div class="timeline-content">
+                    <h4>Knowledge Graph stores Robert's world</h4>
+                    <p>Robert Vance exists in Neo4j with real data across <strong>three channels</strong>:</p>
+                    <div class="mono">
+                        🌐 Web: 4 views of Audi A4 (20 min browsing)<br>
+                        📱 Mobile: 72-month financing calculator at 4.99% APR<br>
+                        🏢 Physical: 90-min test drive at Central Audi Manhattan<br>
+                        ❌ Result: No purchase recorded
+                    </div>
+                </div>
+            </div>
+            <!-- Step 3: Context -->
+            <div class="timeline-step" data-reveal>
+                <div class="timeline-dot">🔍</div>
+                <div class="timeline-content">
+                    <h4>Context Graph extracts omnichannel signal</h4>
+                    <p>The engine traverses <span class="highlight">Session → BrowsedVehicle</span>, <span class="highlight">Session → FinancingCalculator</span>, and <span class="highlight">Person → PhysicalVisit → Dealership</span> to extract:</p>
+                    <div class="mono">
+                        view_count: <span class="highlight">4</span> &nbsp;|&nbsp; used_calculator: <span class="highlight">true</span><br>
+                        test_drive_count: <span class="highlight">1</span> &nbsp;|&nbsp; has_purchased: <span class="highlight">false</span>
+                    </div>
+                    <p style="margin-top:0.75rem; font-size:0.85rem; color:var(--text-muted);">No single channel tells this story. The context graph synthesizes all three.</p>
+                </div>
+            </div>
+            <!-- Step 4: NBA -->
+            <div class="timeline-step" data-reveal>
+                <div class="timeline-dot">🎯</div>
+                <div class="timeline-content">
+                    <h4>Next Best Action fires</h4>
+                    <p>Rule <strong>POL-MAR-01</strong> (Omnichannel Abandonment Recovery) matches: 4+ views + calculator + 1+ test drives.</p>
+                    <div class="result-badge" style="background:var(--nba-bg); border:1px solid var(--nba-border); color:var(--nba);">
+                        📲 Send Conversion SMS — Locked APR for 48h — 98% confidence
+                    </div>
+                    <p style="margin-top:0.75rem; font-size:0.85rem; color:var(--text-muted);">
+                        <em>"The system KNOWS he took a test drive because of the graph relationship, not because an AI guessed."</em>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ═══════════════ SUMMARY TABLE ═══════════════ -->
+<section class="summary-section" id="summary">
+    <div class="container">
+        <h2 class="section-heading">At a Glance</h2>
+        <table class="summary-table">
+            <thead>
+                <tr>
+                    <th>Concept</th>
+                    <th>What</th>
+                    <th>Why</th>
+                    <th>Outcome</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>⚙️ Graph Engineering</td>
+                    <td>The discipline of designing, building, and operating graph-powered systems</td>
+                    <td>Without it, graphs are just databases. With it, they become decision intelligence platforms.</td>
+                    <td>A scalable, auditable, AI-ready graph infrastructure</td>
+                </tr>
+                <tr>
+                    <td>🧬 Ontology</td>
+                    <td>Entity types, relationship types, constraints — the vocabulary</td>
+                    <td>Everyone speaks the same language; the graph has structure and meaning</td>
+                    <td>A shared blueprint for the domain</td>
+                </tr>
+                <tr>
+                    <td>🗄️ Knowledge Graph</td>
+                    <td>Real entities and relationships stored in Neo4j — the facts</td>
+                    <td>Relationships are first-class; decisions persist and the graph grows</td>
+                    <td>A unified, living source of truth</td>
+                </tr>
+                <tr>
+                    <td>🔍 Context Graph</td>
+                    <td>Per-request subgraph with extracted features — the focus</td>
+                    <td>Decisions use only relevant data; state is preserved for audit</td>
+                    <td>Actionable features + audit snapshot</td>
+                </tr>
+                <tr>
+                    <td>🎯 Next Best Action</td>
+                    <td>Deterministic rules → ranked actions, confidence, narrative</td>
+                    <td>Traceable, negotiable, auditable decisions that enrich the graph</td>
+                    <td>A justified action that completes the loop</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<!-- ═══════════════ FOOTER ═══════════════ -->
+<footer class="footer">
+    <strong>NBA Context Engine</strong> — Decision Intelligence Platform &nbsp;·&nbsp; Viztral Technologies
+</footer>
+
+<!-- ═══════════════ SCROLL REVEAL JS ═══════════════ -->
+<script>
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('visible');
+            }
+        });
+    }, {
+        threshold: 0.15,
+        rootMargin: '0px 0px -60px 0px'
+    });
+
+    document.querySelectorAll('[data-reveal], .layer-card, .ge-card, .timeline-step, .ge-flow-step, .ge-arrow').forEach(el => observer.observe(el));
+</script>
+
+</body>
+</html>
